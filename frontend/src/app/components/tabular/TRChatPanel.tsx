@@ -13,7 +13,7 @@ import {
     ChevronLeft,
     Trash2,
 } from "lucide-react";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { SterlexIcon } from "@/app/components/chat/sterlex-icon";
 import {
     streamTabularChat,
     getTabularChats,
@@ -22,7 +22,7 @@ import {
     mapTRMessages,
     type TRChat,
     type TRCitationAnnotation,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import type { AssistantEvent, ColumnConfig, Document } from "../shared/types";
 import { ModelToggle } from "../assistant/ModelToggle";
 import { ApiKeyMissingPopup } from "../popups/ApiKeyMissingPopup";
@@ -33,7 +33,7 @@ import {
     isModelAvailable,
     type ModelProvider,
 } from "@/app/lib/modelAvailability";
-import type { ApiKeyState } from "@/app/lib/mikeApi";
+import type { ApiKeyState } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -321,10 +321,10 @@ function TRResponseStatus({ isActive }: { isActive: boolean }) {
 
     return (
         <div className="w-full h-9 flex items-center mb-2">
-            <MikeIcon
+            <SterlexIcon
                 spin={isActive}
                 done={showDone && doneVisible}
-                mike={!(showDone && doneVisible)}
+                sterlex={!(showDone && doneVisible)}
                 size={22}
             />
         </div>
@@ -1765,8 +1765,8 @@ export function TRChatPanel({
                 }}
                 className={`absolute top-0 right-0 h-full w-1 cursor-col-resize z-20 transition-colors ${
                     isResizing
-                        ? "bg-blue-500"
-                        : "bg-transparent hover:bg-blue-500"
+                        ? "bg-burgundy-500"
+                        : "bg-transparent hover:bg-burgundy-500"
                 }`}
             />
             {/* Header */}
@@ -1848,7 +1848,7 @@ export function TRChatPanel({
             >
                 {messages.length === 0 && !isLoadingMessages && (
                     <div className="flex flex-1 flex-col items-center justify-center gap-2">
-                        <MikeIcon size={24} />
+                        <SterlexIcon size={24} />
                         <p className="text-gray-400 font-serif text-center">
                             Ask a question about this tabular review.
                         </p>

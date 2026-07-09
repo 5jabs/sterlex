@@ -19,18 +19,28 @@ interface Props {
     isActive: boolean;
     onSelect: () => void;
     projectName?: string;
+    /** True when the current user owns the project this chat belongs to. */
+    isProjectOwner?: boolean;
 }
 
-export function SidebarChatItem({ chat, isActive, onSelect, projectName }: Props) {
+export function SidebarChatItem({
+    chat,
+    isActive,
+    onSelect,
+    projectName,
+    isProjectOwner,
+}: Props) {
     const { renameChat, deleteChat } = useChatHistoryContext();
     const { user } = useAuth();
     const [isRenaming, setIsRenaming] = useState(false);
     const [editTitle, setEditTitle] = useState(chat.title ?? "");
     const [ownerOnlyAction, setOwnerOnlyAction] = useState<string | null>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
-    // Sidebar can show collaborator chats from projects the user owns;
-    // rename/delete are still creator-only on the backend, so guard here.
-    const isChatOwner = !!user?.id && chat.user_id === user.id;
+    // Sidebar can show collaborator chats from projects the user owns.
+    // Rename/delete are allowed for the chat's own creator, or for the
+    // owner of the project it lives in (matches the backend check).
+    const canManageChat =
+        (!!user?.id && chat.user_id === user.id) || !!isProjectOwner;
 
     useEffect(() => {
         if (isRenaming) editInputRef.current?.focus();
@@ -65,7 +75,7 @@ export function SidebarChatItem({ chat, isActive, onSelect, projectName }: Props
                             if (e.key === "Enter") void handleRenameSave();
                             if (e.key === "Escape") handleRenameCancel();
                         }}
-                        className="flex-1 bg-white shadow-inner rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="flex-1 bg-white shadow-inner rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-burgundy-500"
                     />
                     <button
                         onClick={() => void handleRenameSave()}
@@ -118,7 +128,7 @@ export function SidebarChatItem({ chat, isActive, onSelect, projectName }: Props
                         <DropdownMenuContent align="end" className="z-101">
                             <DropdownMenuItem
                                 onClick={() => {
-                                    if (!isChatOwner) {
+                                    if (!canManageChat) {
                                         setOwnerOnlyAction("rename this chat");
                                         return;
                                     }
@@ -131,7 +141,7 @@ export function SidebarChatItem({ chat, isActive, onSelect, projectName }: Props
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => {
-                                    if (!isChatOwner) {
+                                    if (!canManageChat) {
                                         setOwnerOnlyAction("delete this chat");
                                         return;
                                     }

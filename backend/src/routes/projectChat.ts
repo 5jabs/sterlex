@@ -9,6 +9,7 @@ import {
     appendAskInputsResponseToLastAssistantMessage,
     appendAssistantEventsToLastAssistantMessage,
     AssistantStreamError,
+    AssistantStreamNotConnectedError,
     buildCancelledAssistantMessage,
     extractCitations,
     isAbortError,
@@ -107,13 +108,21 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             askInputsResponse,
         );
     } else if (lastUser) {
-        await db.from("chat_messages").insert({
-            chat_id: chatId,
-            role: "user",
-            content: lastUser.content,
-            files: lastUser.files ?? null,
-            workflow: lastUser.workflow ?? null,
-        });
+        const { error: userMessageError } = await db
+            .from("chat_messages")
+            .insert({
+                chat_id: chatId,
+                role: "user",
+                content: lastUser.content,
+                files: lastUser.files ?? null,
+                workflow: lastUser.workflow ?? null,
+            });
+        if (userMessageError) {
+            console.error(
+                "[project-chat/stream] failed to save user message",
+                userMessageError,
+            );
+        }
     }
 
     const { docIndex, docStore, folderPaths } = await buildProjectDocContext(
@@ -218,12 +227,20 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
                 citations,
             );
         } else {
-            await db.from("chat_messages").insert({
-                chat_id: chatId,
-                role: "assistant",
-                content: persistedEvents.length ? persistedEvents : null,
-                citations: citations.length ? citations : null,
-            });
+            const { error: assistantMessageError } = await db
+                .from("chat_messages")
+                .insert({
+                    chat_id: chatId,
+                    role: "assistant",
+                    content: persistedEvents.length ? persistedEvents : null,
+                    citations: citations.length ? citations : null,
+                });
+            if (assistantMessageError) {
+                console.error(
+                    "[project-chat/stream] failed to save assistant message",
+                    assistantMessageError,
+                );
+            }
         }
 
         if (!chatTitle && lastUser?.content) {
@@ -272,6 +289,66 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
                         saveError,
                     );
                 }
+            }
+            return;
+        }
+        if (err instanceof AssistantStreamNotConnectedError) {
+            console.log("[project-chat/stream] not connected", {
+                chatId,
+                provider: err.provider,
+            });
+            const notConnectedEvents = stripTransientAssistantEvents(
+                err.events,
+            );
+            try {
+                const citations = extractCitations(
+                    err.fullText,
+                    docIndex,
+                    notConnectedEvents,
+                );
+                const saveError = askInputsResponse
+                    ? null
+                    : (
+                          await db.from("chat_messages").insert({
+                              chat_id: chatId,
+                              role: "assistant",
+                              content: notConnectedEvents.length
+                                  ? notConnectedEvents
+                                  : null,
+                              citations: citations.length ? citations : null,
+                          })
+                      ).error;
+                if (askInputsResponse) {
+                    await appendAssistantEventsToLastAssistantMessage(
+                        db,
+                        chatId,
+                        notConnectedEvents,
+                        citations,
+                    );
+                }
+                if (saveError) {
+                    console.error(
+                        "[project-chat/stream] failed to save not-connected message",
+                        saveError,
+                    );
+                }
+            } catch (saveErr) {
+                console.error(
+                    "[project-chat/stream] failed to save not-connected message",
+                    saveErr,
+                );
+            }
+            try {
+                write(
+                    `data: ${JSON.stringify({
+                        type: "not_connected",
+                        provider: err.provider,
+                        message: err.message,
+                    })}\n\n`,
+                );
+                write("data: [DONE]\n\n");
+            } catch {
+                /* ignore */
             }
             return;
         }

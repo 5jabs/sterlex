@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, EB_Garamond } from "next/font/google";
+import { Inter, Bitter, Lora } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/components/providers";
 
@@ -8,15 +8,21 @@ const inter = Inter({
     subsets: ["latin"],
 });
 
-const ebGaramond = EB_Garamond({
-    variable: "--font-eb-garamond",
+const bitter = Bitter({
+    variable: "--font-bitter",
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700"],
+});
+
+const lora = Lora({
+    variable: "--font-lora",
     subsets: ["latin"],
     weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL("https://app.mikeoss.com"),
-    title: "Mike - AI Legal Platform",
+    metadataBase: new URL("https://app.sterlex.ai"),
+    title: "Sterlex - AI Legal Platform",
     description:
         "AI-powered legal document analysis and contract review platform.",
     icons: {
@@ -28,9 +34,9 @@ export const metadata: Metadata = {
     },
     openGraph: {
         type: "website",
-        url: "https://app.mikeoss.com",
-        siteName: "Mike",
-        title: "Mike - AI Legal Platform",
+        url: "https://app.sterlex.ai",
+        siteName: "Sterlex",
+        title: "Sterlex - AI Legal Platform",
         description:
             "AI-powered legal document analysis and contract review platform.",
         images: [
@@ -38,13 +44,13 @@ export const metadata: Metadata = {
                 url: "/link-image.jpg",
                 width: 1200,
                 height: 651,
-                alt: "Mike",
+                alt: "Sterlex",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Mike - AI Legal Platform",
+        title: "Sterlex - AI Legal Platform",
         description:
             "AI-powered legal document analysis and contract review platform.",
         images: ["/link-image.jpg"],
@@ -59,7 +65,8 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${inter.variable} ${ebGaramond.variable} font-sans antialiased`}
+                className={`${inter.variable} ${bitter.variable} ${lora.variable} font-sans antialiased`}
+                suppressHydrationWarning
             >
                 <Providers>{children}</Providers>
             </body>

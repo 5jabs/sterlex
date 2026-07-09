@@ -207,7 +207,7 @@ export function AssistantSidePanel({
                 onMouseDown={onMouseDown}
                 className={cn(
                     "absolute left-0 top-0 z-10 hidden h-full w-1 cursor-col-resize transition-colors md:block",
-                    "hover:bg-blue-400/70",
+                    "hover:bg-burgundy-400/70",
                 )}
                 style={{ marginLeft: -2 }}
             />

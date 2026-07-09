@@ -30,7 +30,7 @@ import {
     uploadProjectDocument,
     renameDocumentVersion,
     type DocumentVersion,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import type {
     Document,
     Folder as ProjectFolder,
@@ -1049,8 +1049,8 @@ export function ProjectDocumentsView({ projectId }: Props) {
     function hasMovePayload(dt: DataTransfer): boolean {
         return Array.from(dt.types).some(
             (type) =>
-                type === "application/mike-doc" ||
-                type === "application/mike-folder",
+                type === "application/sterlex-doc" ||
+                type === "application/sterlex-folder",
         );
     }
 
@@ -1059,7 +1059,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
     }
 
     function hasDocumentPayload(dt: DataTransfer): boolean {
-        return Array.from(dt.types).includes("application/mike-doc");
+        return Array.from(dt.types).includes("application/sterlex-doc");
     }
 
     function currentVersionNumber(doc: Document): number | null {
@@ -1222,7 +1222,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
         }
         void handleDropExistingDocumentVersion(
             doc,
-            e.dataTransfer.getData("application/mike-doc"),
+            e.dataTransfer.getData("application/sterlex-doc"),
         );
     }
 
@@ -1231,8 +1231,8 @@ export function ProjectDocumentsView({ projectId }: Props) {
         dt: DataTransfer,
     ) {
         if (!hasMovePayload(dt)) return;
-        const docId = dt.getData("application/mike-doc");
-        const subFolderId = dt.getData("application/mike-folder");
+        const docId = dt.getData("application/sterlex-doc");
+        const subFolderId = dt.getData("application/sterlex-folder");
         if (docId) {
             const doc = (project?.documents ?? []).find((d) => d.id === docId);
             if (!doc || (doc.folder_id ?? null) === targetFolderId) return;
@@ -1420,7 +1420,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                         return;
                                     }
                                     e.dataTransfer.setData(
-                                        "application/mike-doc",
+                                        "application/sterlex-doc",
                                         doc.id,
                                     );
                                     e.dataTransfer.effectAllowed = "copyMove";
@@ -1453,11 +1453,11 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                         showFolderActions: false,
                                     });
                                 }}
-                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isVersionDragOver ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : ""}`}
+                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isVersionDragOver ? "bg-burgundy-50 ring-1 ring-inset ring-burgundy-200" : ""}`}
                             >
                                 {(() => {
                                     const rowBg = isVersionDragOver
-                                        ? "bg-blue-50"
+                                        ? "bg-burgundy-50"
                                         : selectedDocIds.includes(doc.id)
                                           ? "bg-gray-50"
                                           : stickyCellBg;
@@ -1738,7 +1738,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                         return;
                                     }
                                     e.dataTransfer.setData(
-                                        "application/mike-folder",
+                                        "application/sterlex-folder",
                                         folder.id,
                                     );
                                     e.dataTransfer.effectAllowed = "move";
@@ -1779,10 +1779,10 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                         showFolderActions: true,
                                     });
                                 }}
-                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isRenaming ? "" : "select-none"} ${dragOverFolderId === folder.id ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : ""}`}
+                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isRenaming ? "" : "select-none"} ${dragOverFolderId === folder.id ? "bg-burgundy-50 ring-1 ring-inset ring-burgundy-200" : ""}`}
                             >
                                 <div
-                                    className={`sticky left-0 z-[60] ${DOC_NAME_COL_W} py-2 pl-4 pr-2 ${dragOverFolderId === folder.id ? "bg-blue-50" : stickyCellBg} transition-colors ${dragOverFolderId === folder.id ? "" : "group-hover:bg-gray-100"}`}
+                                    className={`sticky left-0 z-[60] ${DOC_NAME_COL_W} py-2 pl-4 pr-2 ${dragOverFolderId === folder.id ? "bg-burgundy-50" : stickyCellBg} transition-colors ${dragOverFolderId === folder.id ? "" : "group-hover:bg-gray-100"}`}
                                     style={treeNameCellStyle(depth)}
                                 >
                                     <div className="flex items-center gap-4">
@@ -2217,10 +2217,10 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                 }}
                             >
                                 {dragOverRoot && dragOverFolderId === null && (
-                                    <div className="absolute inset-0 border-2 border-blue-400 pointer-events-none z-[80]" />
+                                    <div className="absolute inset-0 border-2 border-burgundy-400 pointer-events-none z-[80]" />
                                 )}
                                 {dragOverFileRoot && (
-                                    <div className="absolute inset-0 z-[90] border-2 border-blue-400 bg-blue-50/40 pointer-events-none" />
+                                    <div className="absolute inset-0 z-[90] border-2 border-burgundy-400 bg-burgundy-50/40 pointer-events-none" />
                                 )}
 
                                 {/* Empty state */}
@@ -2348,7 +2348,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                                                         return;
                                                                     }
                                                                     e.dataTransfer.setData(
-                                                                        "application/mike-doc",
+                                                                        "application/sterlex-doc",
                                                                         doc.id,
                                                                     );
                                                                     e.dataTransfer.effectAllowed =
@@ -2407,10 +2407,10 @@ export function ProjectDocumentsView({ projectId }: Props) {
                                                                         },
                                                                     );
                                                                 }}
-                                                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isVersionDragOver ? "bg-blue-50 ring-1 ring-inset ring-blue-200" : ""}`}
+                                                                className={`group flex items-center h-10 pr-8 border-b border-gray-50 hover:bg-gray-100 cursor-pointer transition-colors ${isVersionDragOver ? "bg-burgundy-50 ring-1 ring-inset ring-burgundy-200" : ""}`}
                                                             >
                                                                 <div
-                                                                    className={`sticky left-0 z-[60] ${DOC_NAME_COL_W} ${isVersionDragOver ? "bg-blue-50" : selectedDocIds.includes(doc.id) ? "bg-gray-50" : stickyCellBg} py-2 pl-4 pr-2 transition-colors ${isVersionDragOver ? "" : "group-hover:bg-gray-100"}`}
+                                                                    className={`sticky left-0 z-[60] ${DOC_NAME_COL_W} ${isVersionDragOver ? "bg-burgundy-50" : selectedDocIds.includes(doc.id) ? "bg-gray-50" : stickyCellBg} py-2 pl-4 pr-2 transition-colors ${isVersionDragOver ? "" : "group-hover:bg-gray-100"}`}
                                                                 >
                                                                     <div className="flex items-center gap-4">
                                                                         {isProcessing ||

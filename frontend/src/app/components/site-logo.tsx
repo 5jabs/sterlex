@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
 
 interface SiteLogoProps {
     size?: "sm" | "md" | "lg" | "xl";
     className?: string;
-    iconClassName?: string;
     animate?: boolean;
     asLink?: boolean;
 }
@@ -12,13 +10,12 @@ interface SiteLogoProps {
 export function SiteLogo({
     size = "md",
     className = "",
-    iconClassName = "",
     animate = false,
     asLink = false,
 }: SiteLogoProps) {
     const landingHref =
         process.env.NODE_ENV === "production"
-            ? "https://mikeoss.com"
+            ? "https://sterlex.ai"
             : "http://localhost:3000";
     const sizeClasses = {
         sm: "text-xl",
@@ -27,25 +24,13 @@ export function SiteLogo({
         xl: "text-6xl",
     };
 
-    const iconSizes = {
-        sm: 20,
-        md: 22,
-        lg: 30,
-        xl: 48,
-    };
-
     const logo = (
         <h1
-            className={`flex items-center gap-1.5 ${sizeClasses[size]} font-light font-serif ${
+            className={`font-bitter font-medium text-burgundy-600 ${sizeClasses[size]} ${
                 animate ? "sidebar-fade-in" : ""
             } ${className}`}
         >
-            <span
-                className={`inline-flex shrink-0 items-center leading-none ${iconClassName}`}
-            >
-                <MikeIcon size={iconSizes[size]} />
-            </span>
-            <span>Mike</span>
+            Sterlex
         </h1>
     );
 

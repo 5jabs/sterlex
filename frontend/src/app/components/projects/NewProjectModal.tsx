@@ -6,12 +6,12 @@ import {
     addDocumentToProject,
     createProject,
     uploadProjectDocument,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { useDirectoryData } from "../shared/useDirectoryData";
 import { FileDirectory } from "../shared/FileDirectory";
 import { AddUserInput } from "../shared/AddUserInput";
 import type { Project } from "../shared/types";
-import type { UserLookupResult } from "@/app/lib/mikeApi";
+import type { UserLookupResult } from "@/app/lib/sterlexApi";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Modal } from "../modals/Modal";
 import { ModalFieldLabel } from "../modals/ModalFieldLabel";

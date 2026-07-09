@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChevronDown, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
-import type { AssistantEvent } from "../../shared/types";
+import type { AssistantEvent, ApiKeyProvider } from "../../shared/types";
 import { FileTypeIcon } from "../../shared/FileTypeIcon";
 import { RESPONSE_GLASS_SURFACE, withoutMarkdownNode } from "./messageStyles";
 
@@ -339,6 +340,44 @@ export function DocReplicatedBlock({
     );
 }
 
+const API_KEY_PROVIDER_LABEL: Record<ApiKeyProvider, string> = {
+    claude: "Anthropic (Claude)",
+    gemini: "Google (Gemini)",
+    openai: "OpenAI",
+    courtlistener: "CourtListener",
+};
+
+const API_KEY_PROVIDER_DETAIL: Record<ApiKeyProvider, string> = {
+    claude: "Add your Anthropic API key to keep chatting with Claude.",
+    gemini: "Add your Google API key to keep chatting with Gemini.",
+    openai: "Add your OpenAI API key to keep chatting with GPT.",
+    courtlistener:
+        "Add your CourtListener API key to search and verify case law.",
+};
+
+export function ConnectApiKeyBlock({ provider }: { provider: ApiKeyProvider }) {
+    return (
+        <div
+            className={`flex items-center justify-between gap-3 overflow-hidden w-full px-4 py-3 font-sans ${RESPONSE_GLASS_SURFACE}`}
+        >
+            <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">
+                    {API_KEY_PROVIDER_LABEL[provider]} isn&apos;t connected
+                </p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                    {API_KEY_PROVIDER_DETAIL[provider]}
+                </p>
+            </div>
+            <Link
+                href={`/account/api-keys?highlight=${provider}`}
+                className="shrink-0 inline-flex items-center rounded-full bg-black px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800"
+            >
+                Connect key
+            </Link>
+        </div>
+    );
+}
+
 export function DocDownloadBlock({
     filename,
     download_url,
@@ -420,7 +459,7 @@ export function DocDownloadBlock({
                         </span>
                     )}
                 </div>
-                <p className="text-xs text-blue-500 mt-0.5">{ext}</p>
+                <p className="text-xs text-burgundy-500 mt-0.5">{ext}</p>
             </div>
         </div>
     );

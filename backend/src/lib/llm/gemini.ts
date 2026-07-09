@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { toGeminiTools } from "./tools";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
+import { NotConnectedError } from "../notConnectedError";
 
 type GeminiPart = {
   text?: string;
@@ -32,7 +33,8 @@ type GeminiContent = {
 function apiKey(override?: string | null): string {
   const key = override?.trim() || process.env.GEMINI_API_KEY?.trim() || "";
   if (!key) {
-    throw new Error(
+    throw new NotConnectedError(
+      "gemini",
       "Gemini API key is not configured. Set GEMINI_API_KEY or add a user Gemini key.",
     );
   }

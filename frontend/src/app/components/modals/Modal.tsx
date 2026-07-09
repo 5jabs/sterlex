@@ -189,7 +189,7 @@ function ModalActionButton({
         variant === "danger"
             ? "danger"
             : fallbackVariant === "secondary" && variant === "secondary"
-              ? "blue"
+              ? "burgundy"
               : variant === "primary"
                 ? "black"
                 : "white";

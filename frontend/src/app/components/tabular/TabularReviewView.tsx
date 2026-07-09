@@ -28,7 +28,7 @@ import {
     streamTabularGeneration,
     updateTabularReview,
     uploadReviewDocument,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import type {
     ColumnConfig,
     Document,

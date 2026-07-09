@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
-import type { ApiKeyState } from "@/app/lib/mikeApi";
+import type { ApiKeyState } from "@/app/lib/sterlexApi";
 import {
     MODELS,
     SETTINGS_MODELS,

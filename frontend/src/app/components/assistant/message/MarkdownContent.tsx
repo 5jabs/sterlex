@@ -213,7 +213,7 @@ export function MarkdownContent({
                                                         : undefined,
                                             })
                                         }
-                                        className="text-left text-blue-600 hover:text-blue-700 underline"
+                                        className="text-left text-burgundy-600 hover:text-burgundy-700 underline"
                                     >
                                         {children}
                                     </button>
@@ -223,7 +223,7 @@ export function MarkdownContent({
                                 return (
                                     <a
                                         href={citation.url}
-                                        className="text-blue-600 hover:text-blue-700 underline"
+                                        className="text-burgundy-600 hover:text-burgundy-700 underline"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
@@ -233,7 +233,7 @@ export function MarkdownContent({
                             }
                             if (isInternalCaseHref) {
                                 return (
-                                    <span className="text-blue-600 underline">
+                                    <span className="text-burgundy-600 underline">
                                         {children}
                                     </span>
                                 );
@@ -241,7 +241,7 @@ export function MarkdownContent({
                             return (
                                 <a
                                     href={href}
-                                    className="text-blue-600 hover:text-blue-700 underline"
+                                    className="text-burgundy-600 hover:text-burgundy-700 underline"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     {...anchorProps}
@@ -253,7 +253,7 @@ export function MarkdownContent({
                         return (
                             <a
                                 href={href}
-                                className="text-blue-600 hover:text-blue-700 underline"
+                                className="text-burgundy-600 hover:text-burgundy-700 underline"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 {...anchorProps}

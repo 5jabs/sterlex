@@ -13,7 +13,7 @@ import {
     Download,
     ExternalLink,
 } from "lucide-react";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { SterlexIcon } from "@/app/components/chat/sterlex-icon";
 import type { CaseCitationQuote } from "../shared/types";
 import {
     clearDocxQuoteHighlights,
@@ -26,7 +26,7 @@ import {
 import {
     getCourtlistenerOpinions,
     type CaseLawOpinion,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
 
 export type CaseTab = {
@@ -492,7 +492,7 @@ export function CaseLawPanel({
                 {loading && (
                     <div className={cn("h-full min-h-0 rounded-lg border border-gray-200", opinionSurfaceClassName)}>
                         <div className="flex h-full items-center justify-center p-5">
-                            <MikeIcon spin mike size={28} />
+                            <SterlexIcon spin sterlex size={28} />
                         </div>
                     </div>
                 )}
@@ -604,7 +604,7 @@ function OpinionBlock({
             </div>
             {sanitizedHtml ? (
                 <div
-                    className="prose prose-sm max-w-none font-serif leading-7 text-gray-900 [&_*]:font-serif [&_.case-page-number]:mx-1 [&_.case-page-number]:text-xs [&_.case-page-number]:text-gray-400 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_p]:my-3"
+                    className="prose prose-sm max-w-none font-serif leading-7 text-gray-900 [&_*]:font-serif [&_.case-page-number]:mx-1 [&_.case-page-number]:text-xs [&_.case-page-number]:text-gray-400 [&_a]:text-burgundy-600 [&_a]:underline [&_a:hover]:text-burgundy-700 [&_p]:my-3"
                     dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                 />
             ) : (

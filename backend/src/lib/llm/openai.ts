@@ -7,6 +7,7 @@ import type {
   StreamChatResult,
 } from "./types";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
+import { NotConnectedError } from "../notConnectedError";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MAX_OUTPUT_TOKENS = 16384;
@@ -56,7 +57,8 @@ type ResponseStreamEvent = {
 function apiKey(override?: string | null): string {
   const key = override?.trim() || process.env.OPENAI_API_KEY?.trim() || "";
   if (!key) {
-    throw new Error(
+    throw new NotConnectedError(
+      "openai",
       "OpenAI API key is not configured. Set OPENAI_API_KEY or add a user OpenAI key.",
     );
   }

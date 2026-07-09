@@ -7,7 +7,7 @@ import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { needsMfaVerification } from "../popups/MfaVerificationPopup";
 
 type GateState = "idle" | "checking" | "required" | "verified";
-const MFA_VERIFIED_AT_KEY = "mike:mfa-verified-at";
+const MFA_VERIFIED_AT_KEY = "sterlex:mfa-verified-at";
 const MFA_VERIFIED_GRACE_MS = 60_000;
 
 export function MfaLoginGate({ children }: { children: ReactNode }) {
@@ -17,7 +17,12 @@ export function MfaLoginGate({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const { profile, loading } = useUserProfile();
     const [gateState, setGateState] = useState<GateState>("idle");
+    const [hasMounted, setHasMounted] = useState(false);
     const isVerifyPage = pathname === "/verify-mfa";
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -84,6 +89,10 @@ export function MfaLoginGate({ children }: { children: ReactNode }) {
         searchParams,
         user,
     ]);
+
+    if (!hasMounted) {
+        return <>{children}</>;
+    }
 
     if (user && loading) {
         return gateState === "verified" ? (

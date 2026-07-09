@@ -139,8 +139,8 @@ export function ProjectExplorer({
     }
 
     async function handleDropOnTarget(targetFolderId: string | null, e: React.DragEvent) {
-        const docId = e.dataTransfer.getData("application/mike-doc");
-        const movingFolderId = e.dataTransfer.getData("application/mike-folder");
+        const docId = e.dataTransfer.getData("application/sterlex-doc");
+        const movingFolderId = e.dataTransfer.getData("application/sterlex-folder");
 
         if (docId && onMoveDoc) {
             const doc = documents.find((d) => d.id === docId);
@@ -156,8 +156,8 @@ export function ProjectExplorer({
 
     function isInternalDrag(e: React.DragEvent): boolean {
         return (
-            Array.from(e.dataTransfer.types).includes("application/mike-doc") ||
-            Array.from(e.dataTransfer.types).includes("application/mike-folder")
+            Array.from(e.dataTransfer.types).includes("application/sterlex-doc") ||
+            Array.from(e.dataTransfer.types).includes("application/sterlex-folder")
         );
     }
 
@@ -204,7 +204,7 @@ export function ProjectExplorer({
                             <div
                                 draggable
                                 onDragStart={(e) => {
-                                    e.dataTransfer.setData("application/mike-folder", folder.id);
+                                    e.dataTransfer.setData("application/sterlex-folder", folder.id);
                                     e.dataTransfer.effectAllowed = "move";
                                     e.stopPropagation();
                                 }}
@@ -229,7 +229,7 @@ export function ProjectExplorer({
                                 }}
                                 className={`flex items-center gap-1.5 py-1.5 pr-2 rounded-sm cursor-pointer select-none transition-colors group ${
                                     isDragTarget
-                                        ? "bg-blue-50 ring-1 ring-inset ring-blue-200"
+                                        ? "bg-burgundy-50 ring-1 ring-inset ring-burgundy-200"
                                         : "hover:bg-gray-50"
                                 }`}
                                 style={{ paddingLeft: basePadding }}
@@ -278,7 +278,7 @@ export function ProjectExplorer({
                             key={`d-${doc.id}`}
                             draggable
                             onDragStart={(e) => {
-                                e.dataTransfer.setData("application/mike-doc", doc.id);
+                                e.dataTransfer.setData("application/sterlex-doc", doc.id);
                                 e.dataTransfer.effectAllowed = "move";
                             }}
                             onDragOver={(e) => e.stopPropagation()} // don't let doc rows affect root drag state
@@ -315,7 +315,7 @@ export function ProjectExplorer({
 
     return (
         <ul
-            className={`p-1 relative h-full ${dragOverRoot && dragOverFolderId === null ? "ring-2 ring-blue-400 ring-inset" : ""}`}
+            className={`p-1 relative h-full ${dragOverRoot && dragOverFolderId === null ? "ring-2 ring-burgundy-400 ring-inset" : ""}`}
             onContextMenu={(e) => {
                 // Only fires if not stopped by a child
                 openContextMenu(e, null);

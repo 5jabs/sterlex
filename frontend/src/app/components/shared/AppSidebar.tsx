@@ -17,9 +17,8 @@ import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
 import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
-import { listProjects } from "@/app/lib/mikeApi";
+import { listProjects } from "@/app/lib/sterlexApi";
 import type { Project } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
 
@@ -59,6 +58,9 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     const [projectNames, setProjectNames] = useState<Record<string, string>>(
         {},
     );
+    const [projectOwnerIds, setProjectOwnerIds] = useState<
+        Record<string, boolean>
+    >({});
     const [recentProjects, setRecentProjects] = useState<Project[] | null>(
         null,
     );
@@ -68,8 +70,13 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
         listProjects()
             .then((projects) => {
                 const map: Record<string, string> = {};
-                for (const p of projects) map[p.id] = p.name;
+                const ownerMap: Record<string, boolean> = {};
+                for (const p of projects) {
+                    map[p.id] = p.name;
+                    ownerMap[p.id] = p.is_owner ?? p.user_id === user.id;
+                }
                 setProjectNames(map);
+                setProjectOwnerIds(ownerMap);
                 setRecentProjects(
                     [...projects]
                         .sort(
@@ -82,6 +89,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             })
             .catch(() => {
                 setProjectNames({});
+                setProjectOwnerIds({});
                 setRecentProjects([]);
             });
     }, [user]);
@@ -145,7 +153,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             >
                 {/* Toggle + Logo */}
                 <div
-                    className={`items-center justify-between px-2.5 py-3 ${
+                    className={`items-center justify-between px-3 py-4 ${
                         !isOpen ? "hidden md:flex" : "flex"
                     }`}
                 >
@@ -153,15 +161,14 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                         <div className="px-2">
                             <Link
                                 href="/assistant"
-                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                                className="flex items-center hover:opacity-80 transition-opacity"
                             >
-                                <MikeIcon size={22} />
                                 <span
-                                    className={`text-2xl font-light font-serif ${
+                                    className={`font-bitter font-medium text-burgundy-600 text-2xl ${
                                         shouldAnimate ? "sidebar-fade-in" : ""
                                     }`}
                                 >
-                                    Mike
+                                    Sterlex
                                 </span>
                             </Link>
                         </div>
@@ -169,7 +176,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                     <button
                         onClick={handleToggle}
                         className={cn(
-                            "h-9 w-9 p-2.5 items-center flex transition-colors",
+                            "h-10 w-10 p-2.5 items-center flex transition-colors",
                             "rounded-md hover:bg-gray-100",
                         )}
                         title={isOpen ? "Close sidebar" : "Open sidebar"}
@@ -188,12 +195,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                               : pathname === href ||
                                 pathname.startsWith(href + "/");
                     return (
-                        <div key={href} className="py-0.5 px-2.5">
+                        <div key={href} className="py-1 px-3">
                             <button
                                 onClick={() => router.push(href)}
                                 title={!isOpen ? label : ""}
                                 className={cn(
-                                    "w-full h-9 flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors text-left",
+                                    "w-full h-10 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
                                     isActive
                                         ? "bg-gray-200/60 text-gray-900"
                                         : "text-gray-700 hover:bg-gray-100",
@@ -383,6 +390,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                                                       .project_id
                                                               ]
                                                             : undefined
+                                                    }
+                                                    isProjectOwner={
+                                                        !!chat.project_id &&
+                                                        !!projectOwnerIds[
+                                                            chat.project_id
+                                                        ]
                                                     }
                                                     onSelect={() => {
                                                         setCurrentChatId(

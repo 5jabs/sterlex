@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { downloadFile, listFiles } from "./storage";
 import { createServerSupabase } from "./supabase";
+import { NotConnectedError } from "./notConnectedError";
 
 const COURTLISTENER_BASE = "https://www.courtlistener.com/api/rest/v4";
 const COURTLISTENER_WEB_BASE = "https://www.courtlistener.com";
@@ -37,8 +38,9 @@ function courtlistenerHeaders(apiToken?: string | null): HeadersInit {
     const token =
         apiToken?.trim() || process.env.COURTLISTENER_API_TOKEN?.trim();
     if (!token) {
-        throw new Error(
-            "COURTLISTENER_API_TOKEN must be set to use CourtListener tools.",
+        throw new NotConnectedError(
+            "courtlistener",
+            "CourtListener API key is not configured. Add a CourtListener key in Account > API Keys.",
         );
     }
     return {
@@ -103,6 +105,13 @@ async function courtlistenerFetch<T>(
     });
     if (!response.ok) {
         const detail = await response.text().catch(() => "");
+        if (response.status === 401 || response.status === 403) {
+            throw new NotConnectedError(
+                "courtlistener",
+                "CourtListener rejected the configured API key (unauthorized). Update your CourtListener key in Account > API Keys.",
+                "invalid",
+            );
+        }
         throw new Error(parseCourtlistenerError(response.status, detail));
     }
     return response.json() as Promise<T>;
@@ -548,8 +557,12 @@ function buildCitationLinks(results: CitationLookupRow[]) {
     );
 }
 
-function courtlistenerApiTokenAvailable(apiToken?: string | null) {
+export function courtlistenerApiTokenAvailable(apiToken?: string | null) {
     return !!(apiToken?.trim() || process.env.COURTLISTENER_API_TOKEN?.trim());
+}
+
+export function courtlistenerLocalDataAvailable() {
+    return courtlistenerBulkDataEnabled();
 }
 
 async function getBulkCitationLookup(args: {
@@ -1037,6 +1050,7 @@ export async function verifyCourtlistenerCitations(args: {
                 source: "bulk+api",
             };
         } catch (err) {
+            if (err instanceof NotConnectedError) throw err;
             devLog("[courtlistener/bulk-citation-lookup] api fallback failed", {
                 error: err instanceof Error ? err.message : String(err),
             });
@@ -1172,6 +1186,7 @@ export async function getCourtlistenerCases(args: {
                         : { result }),
                 };
             } catch (err) {
+                if (err instanceof NotConnectedError) throw err;
                 return {
                     clusterId,
                     id: clusterId,

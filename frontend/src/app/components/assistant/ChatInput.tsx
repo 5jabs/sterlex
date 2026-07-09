@@ -17,6 +17,7 @@ import {
     X,
 } from "lucide-react";
 import { AddDocButton } from "./AddDocButton";
+import { SourcesButton } from "./SourcesButton";
 import { FileTypeIcon } from "../shared/FileTypeIcon";
 import { AddDocumentsModal } from "../modals/AddDocumentsModal";
 import { AssistantWorkflowModal } from "./AssistantWorkflowModal";
@@ -168,7 +169,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                     {(selectedWorkflow || attachedDocs.length > 0) && (
                         <div className="flex flex-wrap gap-1.5 px-2 pt-2">
                             {selectedWorkflow && (
-                                <div className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full text-xs bg-blue-600 text-white border border-white/20 shadow backdrop-blur-sm">
+                                <div className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full text-xs bg-burgundy-600 text-white border border-white/20 shadow backdrop-blur-sm">
                                     <Library className="h-2.5 w-2.5 shrink-0" />
                                     <span className="max-w-[140px] truncate">
                                         {selectedWorkflow.title}
@@ -252,7 +253,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                                     className={cn(
                                         "flex items-center gap-1.5 rounded-lg px-2 h-8 text-sm transition-colors",
                                         selectedWorkflow
-                                            ? "text-blue-600 hover:bg-white/55"
+                                            ? "text-burgundy-600 hover:bg-white/55"
                                             : "text-gray-400 hover:bg-white/55 hover:text-gray-700",
                                     )}
                                 >
@@ -272,6 +273,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                                     </span>
                                 </button>
                             )}
+                            <SourcesButton hideLabel={compactControls} />
                             {onProjectsClick && (
                                 <button
                                     type="button"

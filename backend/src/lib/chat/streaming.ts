@@ -41,6 +41,7 @@ import {
   type TurnEditState,
   type TurnReadState,
 } from "./tools/documentOps";
+import { NotConnectedError, type NotConnectedProvider } from "../notConnectedError";
 
 
 export type AssistantEvent =
@@ -100,7 +101,12 @@ export type AssistantEvent =
   | McpToolEvent
   | { type: "case_opinions"; cluster_id: number; case: unknown }
   | { type: "content"; text: string }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | {
+      type: "not_connected";
+      provider: NotConnectedProvider;
+      message: string;
+    };
 
 export class AssistantStreamError extends Error {
   fullText: string;
@@ -118,6 +124,25 @@ export class AssistantStreamAbortError extends AssistantStreamError {
   constructor(fullText: string, events: AssistantEvent[]) {
     super("Stream aborted.", fullText, events);
     this.name = "AbortError";
+  }
+}
+
+// Wraps a NotConnectedError once it's surfaced through the LLM stream, so
+// routes/chat.ts and routes/projectChat.ts can tell "no API key configured"
+// apart from any other stream failure and respond with a dedicated
+// "connect your key" event instead of a generic error message.
+export class AssistantStreamNotConnectedError extends AssistantStreamError {
+  provider: NotConnectedProvider;
+
+  constructor(
+    provider: NotConnectedProvider,
+    message: string,
+    fullText: string,
+    events: AssistantEvent[],
+  ) {
+    super(message, fullText, events);
+    this.name = "AssistantStreamNotConnectedError";
+    this.provider = provider;
   }
 }
 
@@ -514,6 +539,19 @@ export async function runLLMStream(params: {
     } else if (isAbortError(err)) {
       flushPartialTurn({ emit: false });
       throw new AssistantStreamAbortError(fullText, events);
+    } else if (err instanceof NotConnectedError) {
+      flushPartialTurn();
+      events.push({
+        type: "not_connected",
+        provider: err.provider,
+        message: err.message,
+      });
+      throw new AssistantStreamNotConnectedError(
+        err.provider,
+        err.message,
+        fullText,
+        events,
+      );
     } else {
       flushPartialTurn();
       const message = safeErrorMessage(err, "Stream error");

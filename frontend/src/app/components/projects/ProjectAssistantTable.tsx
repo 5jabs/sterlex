@@ -38,6 +38,7 @@ export function ProjectAssistantTable({
     renamingChatId,
     renameChatValue,
     currentUserId,
+    isProjectOwner,
     onCreateChat,
     onOpenChat,
     onDeleteChat,
@@ -56,6 +57,8 @@ export function ProjectAssistantTable({
     renamingChatId: string | null;
     renameChatValue: string;
     currentUserId?: string | null;
+    /** Project owners can rename/delete any chat in their project. */
+    isProjectOwner?: boolean;
     onCreateChat: () => void;
     onOpenChat: (chatId: string) => void;
     onDeleteChat: (chat: Chat) => Promise<void> | void;
@@ -127,6 +130,7 @@ export function ProjectAssistantTable({
                                     onClose={close}
                                     onRename={() => {
                                         if (
+                                            !isProjectOwner &&
                                             currentUserId &&
                                             chat.user_id !== currentUserId
                                         ) {
@@ -183,6 +187,7 @@ export function ProjectAssistantTable({
                                 <RowActions
                                     onRename={() => {
                                         if (
+                                            !isProjectOwner &&
                                             currentUserId &&
                                             chat.user_id !== currentUserId
                                         ) {

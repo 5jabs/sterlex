@@ -9,6 +9,7 @@ import {
     appendAskInputsResponseToLastAssistantMessage,
     appendAssistantEventsToLastAssistantMessage,
     AssistantStreamError,
+    AssistantStreamNotConnectedError,
     buildCancelledAssistantMessage,
     extractCitations,
     isAbortError,
@@ -338,20 +339,45 @@ async function hydrateEditStatuses(
     });
 }
 
+// Rename/delete are allowed for the chat's own creator, or for the owner of
+// the project the chat belongs to (a project owner manages everything inside
+// their project, even chats started by a collaborator they shared it with).
+async function canManageChat(
+    chatId: string,
+    userId: string,
+    userEmail: string | null | undefined,
+    db: Db,
+): Promise<boolean> {
+    const { data: chat } = await db
+        .from("chats")
+        .select("user_id, project_id")
+        .eq("id", chatId)
+        .maybeSingle();
+    if (!chat) return false;
+    const row = chat as { user_id: string; project_id: string | null };
+    if (row.user_id === userId) return true;
+    if (!row.project_id) return false;
+    const access = await checkProjectAccess(row.project_id, userId, userEmail, db);
+    return access.ok && access.isOwner;
+}
+
 // PATCH /chat/:chatId
 chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
+    const userEmail = res.locals.userEmail as string | undefined;
     const { chatId } = req.params;
     const title = (req.body.title ?? "").trim();
     if (!title)
         return void res.status(400).json({ detail: "title is required" });
 
     const db = createServerSupabase();
+    if (!(await canManageChat(chatId, userId, userEmail, db)))
+        return void res.status(404).json({ detail: "Chat not found" });
+
     const { data, error } = await db
         .from("chats")
         .update({ title })
         .eq("id", chatId)
-        .eq("user_id", userId)
         .select("id, title")
         .single();
 
@@ -363,13 +389,13 @@ chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
 // DELETE /chat/:chatId
 chatRouter.delete("/:chatId", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
+    const userEmail = res.locals.userEmail as string | undefined;
     const { chatId } = req.params;
     const db = createServerSupabase();
-    const { error } = await db
-        .from("chats")
-        .delete()
-        .eq("id", chatId)
-        .eq("user_id", userId);
+    if (!(await canManageChat(chatId, userId, userEmail, db)))
+        return void res.status(404).json({ detail: "Chat not found" });
+
+    const { error } = await db.from("chats").delete().eq("id", chatId);
 
     if (error) return void res.status(500).json({ detail: error.message });
     res.status(204).send();
@@ -518,13 +544,21 @@ chatRouter.post("/", requireAuth, async (req, res) => {
             askInputsResponse,
         );
     } else if (lastUser) {
-        await db.from("chat_messages").insert({
-            chat_id: chatId,
-            role: "user",
-            content: lastUser.content,
-            files: lastUser.files ?? null,
-            workflow: lastUser.workflow ?? null,
-        });
+        const { error: userMessageError } = await db
+            .from("chat_messages")
+            .insert({
+                chat_id: chatId,
+                role: "user",
+                content: lastUser.content,
+                files: lastUser.files ?? null,
+                workflow: lastUser.workflow ?? null,
+            });
+        if (userMessageError) {
+            console.error(
+                "[chat/stream] failed to save user message",
+                userMessageError,
+            );
+        }
     }
 
     const { docIndex, docStore } = await buildDocContext(
@@ -608,12 +642,20 @@ chatRouter.post("/", requireAuth, async (req, res) => {
                 citations,
             );
         } else {
-            await db.from("chat_messages").insert({
-                chat_id: chatId,
-                role: "assistant",
-                content: persistedEvents.length ? persistedEvents : null,
-                citations: citations.length ? citations : null,
-            });
+            const { error: assistantMessageError } = await db
+                .from("chat_messages")
+                .insert({
+                    chat_id: chatId,
+                    role: "assistant",
+                    content: persistedEvents.length ? persistedEvents : null,
+                    citations: citations.length ? citations : null,
+                });
+            if (assistantMessageError) {
+                console.error(
+                    "[chat/stream] failed to save assistant message",
+                    assistantMessageError,
+                );
+            }
         }
 
         if (!chatTitle && lastUser?.content) {
@@ -660,6 +702,66 @@ chatRouter.post("/", requireAuth, async (req, res) => {
                         saveError,
                     );
                 }
+            }
+            return;
+        }
+        if (err instanceof AssistantStreamNotConnectedError) {
+            devLog("[chat/stream] not connected", {
+                chatId,
+                provider: err.provider,
+            });
+            const notConnectedEvents = stripTransientAssistantEvents(
+                err.events,
+            );
+            try {
+                const citations = extractCitations(
+                    err.fullText,
+                    docIndex,
+                    notConnectedEvents,
+                );
+                const saveError = askInputsResponse
+                    ? null
+                    : (
+                          await db.from("chat_messages").insert({
+                              chat_id: chatId,
+                              role: "assistant",
+                              content: notConnectedEvents.length
+                                  ? notConnectedEvents
+                                  : null,
+                              citations: citations.length ? citations : null,
+                          })
+                      ).error;
+                if (askInputsResponse) {
+                    await appendAssistantEventsToLastAssistantMessage(
+                        db,
+                        chatId,
+                        notConnectedEvents,
+                        citations,
+                    );
+                }
+                if (saveError) {
+                    console.error(
+                        "[chat/stream] failed to save not-connected message",
+                        saveError,
+                    );
+                }
+            } catch (saveErr) {
+                console.error(
+                    "[chat/stream] failed to save not-connected message",
+                    saveErr,
+                );
+            }
+            try {
+                write(
+                    `data: ${JSON.stringify({
+                        type: "not_connected",
+                        provider: err.provider,
+                        message: err.message,
+                    })}\n\n`,
+                );
+                write("data: [DONE]\n\n");
+            } catch {
+                /* ignore */
             }
             return;
         }

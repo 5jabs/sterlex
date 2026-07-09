@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProject, listProjects, listStandaloneDocuments } from "@/app/lib/mikeApi";
+import { getProject, listProjects, listStandaloneDocuments } from "@/app/lib/sterlexApi";
 import type { Document, Project } from "./types";
 
 const CACHE_TTL_MS = 30_000;

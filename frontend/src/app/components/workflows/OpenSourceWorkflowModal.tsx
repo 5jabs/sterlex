@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, EyeOff, User } from "lucide-react";
-import { openSourceWorkflow } from "@/app/lib/mikeApi";
+import { openSourceWorkflow } from "@/app/lib/sterlexApi";
 import type { WorkflowOpenSourceSubmission } from "@/app/components/shared/types";
 import { Modal } from "@/app/components/modals/Modal";
 import { ModalFieldLabel } from "@/app/components/modals/ModalFieldLabel";
@@ -316,7 +316,7 @@ export function OpenSourceWorkflowModal({
                                             className="cursor-pointer"
                                         >
                                             GitHub repository and on the
-                                            mikeoss.com website.
+                                            sterlex.ai website.
                                         </label>
                                     </p>
                                 </div>

@@ -38,7 +38,7 @@ export function FileTypeIcon({
         case "pdf":
             return <FileText className={`${cls} text-red-500`} />;
         case "word":
-            return <File className={`${cls} text-blue-500`} />;
+            return <File className={`${cls} text-burgundy-500`} />;
         case "excel":
             return <FileSpreadsheet className={`${cls} text-emerald-500`} />;
         case "ppt":

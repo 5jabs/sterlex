@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { deleteChat, renameChat } from "@/app/lib/mikeApi";
+import { deleteChat, renameChat } from "@/app/lib/sterlexApi";
 import { ProjectAssistantTable } from "@/app/components/projects/ProjectAssistantTable";
 import {
     ProjectSectionToolbar,
@@ -59,12 +59,14 @@ export default function ProjectAssistantPage({ params }: Props) {
     const { user } = useAuth();
     const {
         ensureProjectChats,
+        project,
         projectChats,
         projectId,
         search,
         setProjectChats,
         setOwnerOnlyAction,
     } = workspace;
+    const isProjectOwner = project?.is_owner !== false;
     const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
     const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
     const [renameChatValue, setRenameChatValue] = useState("");
@@ -100,7 +102,7 @@ export default function ProjectAssistantPage({ params }: Props) {
     }
 
     async function handleDeleteChatRow(chat: Chat) {
-        if (user?.id && chat.user_id !== user.id) {
+        if (!isProjectOwner && user?.id && chat.user_id !== user.id) {
             setOwnerOnlyAction("delete this chat");
             return;
         }
@@ -112,6 +114,7 @@ export default function ProjectAssistantPage({ params }: Props) {
         const ids = [...selectedChatIds];
         setActionsOpen(false);
         const owned = ids.filter((id) => {
+            if (isProjectOwner) return true;
             const chat = chats.find((c) => c.id === id);
             return !chat || chat.user_id === user?.id;
         });
@@ -126,7 +129,14 @@ export default function ProjectAssistantPage({ params }: Props) {
                 `delete ${blocked} of the selected chats - only the chat creator can delete a chat`,
             );
         }
-    }, [chats, selectedChatIds, setOwnerOnlyAction, setProjectChats, user?.id]);
+    }, [
+        chats,
+        isProjectOwner,
+        selectedChatIds,
+        setOwnerOnlyAction,
+        setProjectChats,
+        user?.id,
+    ]);
 
     return (
         <>
@@ -149,6 +159,7 @@ export default function ProjectAssistantPage({ params }: Props) {
                 renamingChatId={renamingChatId}
                 renameChatValue={renameChatValue}
                 currentUserId={user?.id}
+                isProjectOwner={isProjectOwner}
                 loading={loading}
                 onCreateChat={() => void workspace.createChat()}
                 onOpenChat={(chatId) =>

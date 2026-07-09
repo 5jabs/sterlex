@@ -410,7 +410,7 @@ function MarkdownContent({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-700 underline"
+                        className="text-burgundy-600 hover:text-burgundy-700 underline"
                         {...props}
                     >
                         {children}

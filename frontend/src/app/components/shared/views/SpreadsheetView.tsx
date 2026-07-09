@@ -337,9 +337,9 @@ export function SpreadsheetView({
             const w = info.endX - info.startX;
             const h = info.endY - info.startY;
             ctx.save();
-            ctx.fillStyle = "rgba(59, 130, 246, 0.16)";
+            ctx.fillStyle = "rgba(110, 31, 45, 0.16)";
             ctx.fillRect(info.startX, info.startY, w, h);
-            ctx.strokeStyle = "#3b82f6";
+            ctx.strokeStyle = "#6e1f2d";
             ctx.lineWidth = 2;
             ctx.strokeRect(info.startX + 1, info.startY + 1, w - 2, h - 2);
             ctx.restore();

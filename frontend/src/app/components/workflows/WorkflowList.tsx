@@ -15,13 +15,13 @@ import {
     listHiddenWorkflows,
     hideWorkflow,
     unhideWorkflow,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import type { Workflow } from "../shared/types";
 import { UseWorkflowModal } from "./UseWorkflowModal";
 import { NewWorkflowModal } from "./NewWorkflowModal";
 import { TableToolbar } from "../shared/TableToolbar";
 import { RowActionMenuItems, RowActions } from "../shared/RowActions";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { SterlexIcon } from "@/app/components/chat/sterlex-icon";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import { workflowDetailPath } from "./workflowRoutes";
 import {
@@ -257,7 +257,7 @@ export function WorkflowList() {
             : {
                   label: "Assistant",
                   Icon: MessageSquare,
-                  className: "text-blue-700",
+                  className: "text-burgundy-700",
               };
 
     const typeFilterButton = (
@@ -610,17 +610,17 @@ export function WorkflowList() {
                                 <TableCell className="w-44">
                                     {wf.is_system ? (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                                            <MikeIcon size={14} />
+                                            <SterlexIcon size={14} />
                                             System
                                         </span>
                                     ) : wf.is_owner !== false ? (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                                            <User className="h-3.5 w-3.5 text-blue-600" />
+                                            <User className="h-3.5 w-3.5 text-burgundy-600" />
                                             User
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 truncate max-w-full">
-                                            <User className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                                            <User className="h-3.5 w-3.5 shrink-0 text-burgundy-600" />
                                             <span className="truncate">
                                                 {getSharedByLabel(wf)}
                                             </span>
@@ -716,7 +716,7 @@ const GLASS_DOT =
 
 // Full literal class names so Tailwind's scanner keeps them (no dynamic strings).
 const PRACTICE_DOT_COLORS = [
-    "bg-blue-500",
+    "bg-burgundy-500",
     "bg-violet-500",
     "bg-emerald-500",
     "bg-amber-500",

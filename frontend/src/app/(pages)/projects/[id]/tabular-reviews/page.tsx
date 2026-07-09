@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react";
 import {
     deleteTabularReview,
     updateTabularReview,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { ProjectReviewsTable } from "@/app/components/projects/ProjectReviewsTable";
 import { TabularReviewDetailsModal } from "@/app/components/tabular/TabularReviewDetailsModal";
 import {

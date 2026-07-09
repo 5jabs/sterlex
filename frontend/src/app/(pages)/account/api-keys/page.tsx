@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
@@ -8,7 +9,7 @@ import {
     MfaVerificationPopup,
     needsMfaVerification,
 } from "@/app/components/popups/MfaVerificationPopup";
-import { isMfaRequiredError } from "@/app/lib/mikeApi";
+import { isMfaRequiredError } from "@/app/lib/sterlexApi";
 import {
     accountGlassIconButtonClassName,
     accountGlassInputClassName,
@@ -44,12 +45,14 @@ const OTHER_API_KEY_FIELDS = [
         label: "CourtListener API Key",
         placeholder: "Token...",
         description:
-            "Add a CourtListener API key if you want the latest CourtListener data. Otherwise, Mike will use the bulk data hosted by us.",
+            "Add a CourtListener API key if you want the latest CourtListener data. Otherwise, Sterlex will use the bulk data hosted by us.",
     },
 ] as const;
 
 export default function ApiKeysPage() {
     const { profile, updateApiKey } = useUserProfile();
+    const searchParams = useSearchParams();
+    const highlight = searchParams.get("highlight");
 
     return (
         <div>
@@ -59,12 +62,14 @@ export default function ApiKeysPage() {
             <p className="text-sm text-gray-500 mb-4">
                 You must provide your own API keys for the app to work or add
                 your API keys into the .env file if you are running your own
-                instance of Mike. All API keys are encrypted in storage.
+                instance of Sterlex. All API keys are encrypted in storage.
             </p>
             <AccountSection>
                 {MODEL_API_KEY_FIELDS.map((field, index) => (
                     <div key={field.provider}>
                         <ApiKeyField
+                            id={`apikey-${field.provider}`}
+                            highlighted={highlight === field.provider}
                             label={field.label}
                             placeholder={field.placeholder}
                             hasSavedKey={
@@ -93,6 +98,8 @@ export default function ApiKeysPage() {
                 {OTHER_API_KEY_FIELDS.map((field) => (
                     <ApiKeyField
                         key={field.provider}
+                        id={`apikey-${field.provider}`}
+                        highlighted={highlight === field.provider}
                         label={field.label}
                         description={field.description}
                         placeholder={field.placeholder}
@@ -114,6 +121,8 @@ export default function ApiKeysPage() {
 }
 
 function ApiKeyField({
+    id,
+    highlighted,
     label,
     description,
     placeholder,
@@ -122,6 +131,8 @@ function ApiKeyField({
     onSave,
     onRemove,
 }: {
+    id?: string;
+    highlighted?: boolean;
     label: string;
     description?: string;
     placeholder: string;
@@ -137,10 +148,25 @@ function ApiKeyField({
     const [pendingMfaAction, setPendingMfaAction] = useState<
         "save" | "remove" | null
     >(null);
+    const [showHighlight, setShowHighlight] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setValue("");
     }, [hasSavedKey]);
+
+    // Deep-linked from a "Connect key" card in chat (?highlight=<provider>):
+    // scroll this field into view and flash a ring around it briefly.
+    useEffect(() => {
+        if (!highlighted) return;
+        containerRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+        setShowHighlight(true);
+        const timeout = setTimeout(() => setShowHighlight(false), 2200);
+        return () => clearTimeout(timeout);
+    }, [highlighted]);
 
     const dirty = value.trim().length > 0;
 
@@ -202,7 +228,15 @@ function ApiKeyField({
 
     return (
         <>
-            <div className="px-4 py-5">
+            <div
+                id={id}
+                ref={containerRef}
+                className={`px-4 py-5 rounded-lg transition-shadow duration-700 ${
+                    showHighlight
+                        ? "ring-2 ring-black/60 shadow-md"
+                        : "ring-0 shadow-transparent"
+                }`}
+            >
                 <label className="text-sm font-medium text-gray-700 block mb-2">
                     {label}
                 </label>

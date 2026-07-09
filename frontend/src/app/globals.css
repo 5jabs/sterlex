@@ -7,13 +7,21 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --font-sans: var(--font-inter);
-    --font-serif: var(--font-eb-garamond);
-    --color-blue: rgb(0, 136, 255);
-    --color-blue-50: rgba(0, 136, 255, 0.05);
-    --color-blue-100: rgba(0, 136, 255, 0.1);
-    --color-blue-200: rgba(0, 136, 255, 0.3);
-    --color-blue-600: rgb(0, 136, 255);
-    --color-blue-700: rgb(0, 120, 230);
+    --font-serif: var(--font-lora);
+    --font-bitter: var(--font-bitter);
+    --font-lora: var(--font-lora);
+    --color-burgundy: #6e1f2d;
+    --color-burgundy-50: rgba(110, 31, 45, 0.05);
+    --color-burgundy-100: rgba(110, 31, 45, 0.1);
+    --color-burgundy-200: rgba(110, 31, 45, 0.3);
+    --color-burgundy-300: #d592a0;
+    --color-burgundy-400: #b96578;
+    --color-burgundy-500: #93435a;
+    --color-burgundy-600: #6e1f2d;
+    --color-burgundy-700: #5c1926;
+    --color-burgundy-800: #4a141f;
+    --color-burgundy-900: #390f18;
+    --color-burgundy-950: #220810;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,8 +58,8 @@
 }
 
 :root {
-    --radius: 0.625rem;
-    --color-azure: 0, 136, 255;
+    --radius: 0.75rem;
+    --color-link-accent: 110, 31, 45;
     --background: oklch(0.985 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -170,15 +178,15 @@
 /* Inline cross-reference links within section text */
 .usc-xref,
 .usc-section a {
-    color: rgb(var(--color-azure));
+    color: rgb(var(--color-link-accent));
     text-decoration: none;
-    border-bottom: 1px dotted rgba(var(--color-azure), 0.4);
+    border-bottom: 1px dotted rgba(var(--color-link-accent), 0.4);
     transition: border-bottom-color 0.2s;
 }
 
 .usc-xref:hover,
 .usc-section a:hover {
-    border-bottom-color: rgb(var(--color-azure));
+    border-bottom-color: rgb(var(--color-link-accent));
 }
 
 /* Remove automatic list styling for USC section content */
@@ -238,14 +246,14 @@
 }
 
 .cfr-section a {
-    color: rgb(var(--color-azure));
+    color: rgb(var(--color-link-accent));
     text-decoration: none;
-    border-bottom: 1px dotted rgba(var(--color-azure), 0.4);
+    border-bottom: 1px dotted rgba(var(--color-link-accent), 0.4);
     transition: border-bottom-color 0.2s;
 }
 
 .cfr-section a:hover {
-    border-bottom-color: rgb(var(--color-azure));
+    border-bottom-color: rgb(var(--color-link-accent));
 }
 
 .cfr-section table {
@@ -277,10 +285,6 @@
 }
 
 @layer utilities {
-    .font-eb-garamond {
-        font-family: var(--font-eb-garamond);
-    }
-
     .sidebar-fade-in {
         animation: sidebarFadeIn 0.3s ease-out forwards;
         animation-delay: 0.1s;
@@ -323,6 +327,18 @@
         }
         to {
             background-position: -200% 0;
+        }
+    }
+
+    @keyframes sterlex-pulse-dot {
+        0%,
+        100% {
+            transform: scale(0.65);
+            opacity: 0.75;
+        }
+        50% {
+            transform: scale(1.15);
+            opacity: 1;
         }
     }
 
@@ -493,14 +509,14 @@
 }
 
 .pdf-text-layer .pdf-text-highlight {
-    background-color: rgba(37, 99, 235, 0.2);
+    background-color: rgba(110, 31, 45, 0.2);
     border-radius: 2px;
     position: static;
 }
 
 .docx-view-container span.docx-text-highlight,
 .docx-view-container .docx-text-highlight {
-    background-color: rgba(37, 99, 235, 0.35) !important;
+    background-color: rgba(110, 31, 45, 0.35) !important;
     border-radius: 2px;
     padding: 0 1px;
     color: inherit !important;
@@ -508,7 +524,7 @@
 
 .case-opinion-content span.docx-text-highlight,
 .case-opinion-content .docx-text-highlight {
-    background-color: rgba(96, 165, 250, 0.55) !important;
+    background-color: rgba(185, 101, 120, 0.55) !important;
     border-radius: 2px;
     padding: 0 1px;
     color: inherit !important;
@@ -559,11 +575,11 @@
 
 @keyframes docxEditFlash {
     0%, 20% {
-        background-color: rgba(59, 130, 246, 0.45);
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45);
+        background-color: rgba(110, 31, 45, 0.45);
+        box-shadow: 0 0 0 2px rgba(110, 31, 45, 0.45);
     }
     100% {
-        background-color: rgba(59, 130, 246, 0);
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0);
+        background-color: rgba(110, 31, 45, 0);
+        box-shadow: 0 0 0 2px rgba(110, 31, 45, 0);
     }
 }

@@ -870,24 +870,20 @@ export async function runToolCalls(
           content: JSON.stringify(result),
         });
       } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "CourtListener search failed.";
         const event: CourtlistenerToolEvent = {
           type: "courtlistener_search_case_law",
           query,
           result_count: 0,
-          error:
-            err instanceof Error ? err.message : "CourtListener search failed.",
+          error: message,
         };
         write(`data: ${JSON.stringify(event)}\n\n`);
         courtlistenerEvents.push(event);
         toolResults.push({
           role: "tool",
           tool_call_id: tc.id,
-          content: JSON.stringify({
-            error:
-              err instanceof Error
-                ? err.message
-                : "CourtListener search failed.",
-          }),
+          content: JSON.stringify({ error: message }),
         });
       }
     } else if (tc.function.name === COURTLISTENER_TOOL_NAMES.getCases) {
@@ -1016,27 +1012,23 @@ export async function runToolCalls(
           }),
         });
       } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "CourtListener case fetch failed.";
         const event: CourtlistenerToolEvent = {
           type: "courtlistener_get_cases",
           cluster_ids: clusterIds,
           case_count: 0,
           opinion_count: 0,
-          error:
-            err instanceof Error
-              ? err.message
-              : "CourtListener case fetch failed.",
+          error: message,
         };
         write(`data: ${JSON.stringify(event)}\n\n`);
         courtlistenerEvents.push(event);
         toolResults.push({
           role: "tool",
           tool_call_id: tc.id,
-          content: JSON.stringify({
-            error:
-              err instanceof Error
-                ? err.message
-                : "CourtListener case fetch failed.",
-          }),
+          content: JSON.stringify({ error: message }),
         });
       }
     } else if (tc.function.name === COURTLISTENER_TOOL_NAMES.findInCase) {
@@ -1353,26 +1345,22 @@ export async function runToolCalls(
           content: JSON.stringify(result),
         });
       } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "CourtListener citation lookup failed.";
         const event: CourtlistenerToolEvent = {
           type: "courtlistener_verify_citations",
           citation_count: citationCount,
           match_count: 0,
-          error:
-            err instanceof Error
-              ? err.message
-              : "CourtListener citation lookup failed.",
+          error: message,
         };
         write(`data: ${JSON.stringify(event)}\n\n`);
         courtlistenerEvents.push(event);
         toolResults.push({
           role: "tool",
           tool_call_id: tc.id,
-          content: JSON.stringify({
-            error:
-              err instanceof Error
-                ? err.message
-                : "CourtListener citation lookup failed.",
-          }),
+          content: JSON.stringify({ error: message }),
         });
       }
     } else if (tc.function.name === "edit_document" && docIndex) {

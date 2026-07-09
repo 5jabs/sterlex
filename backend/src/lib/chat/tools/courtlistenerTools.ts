@@ -87,7 +87,8 @@ Citation rules:
 - If you have not obtained opinion text or snippets for a useful case, fetch/read it before citing it, or say you could not read it and do not rely on it.
 
 Limits:
-- If any CourtListener call returns a rate-limit/throttling/429 error, stop all CourtListener calls for that turn and answer using only information already available.`;
+- If any CourtListener call returns a rate-limit/throttling/429 error, stop all CourtListener calls for that turn and answer using only information already available.
+- If a CourtListener tool call fails because no API key is configured, tell the user plainly that CourtListener isn't connected and continue answering from your own knowledge, clearly noting that the case law/citations are unverified.`;
 
 export const COURTLISTENER_TOOLS = [
     {

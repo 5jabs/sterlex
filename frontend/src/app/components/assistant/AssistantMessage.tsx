@@ -14,6 +14,7 @@ import { CitationsBlock, buildCitationAppendix } from "./message/CitationSources
 import { EditCardsSection } from "./message/EditCardsSection";
 import {
     AskInputsBlock,
+    ConnectApiKeyBlock,
     CourtListenerBlock,
     DocCreatedBlock,
     DocDownloadBlock,
@@ -31,7 +32,7 @@ interface Props {
     events?: AssistantEvent[];
     isStreaming?: boolean;
     isError?: boolean;
-    /** Human-readable error text rendered alongside the red Mike icon. */
+    /** Human-readable error text rendered alongside the red Sterlex icon. */
     errorMessage?: string;
     citations?: Citation[];
     citationStatus?: "started" | "partial" | "final";
@@ -165,6 +166,7 @@ export function AssistantMessage({
 
     const isRenderableEvent = (event: AssistantEvent) =>
         event.type !== "error" &&
+        event.type !== "not_connected" &&
         event.type !== "ask_inputs_response" &&
         event.type !== "case_citation" &&
         event.type !== "case_opinions";
@@ -897,6 +899,27 @@ export function AssistantMessage({
                         {topLevelErrorMessage}
                     </p>
                 )}
+
+                {/* Connect-your-key card — shown whenever the stream stopped
+                    because the selected LLM or CourtListener has no API key
+                    configured, with a direct link to go add one. */}
+                {events &&
+                    !isStreaming &&
+                    (() => {
+                        const notConnected = events.find(
+                            (e) => e.type === "not_connected",
+                        ) as
+                            | Extract<AssistantEvent, { type: "not_connected" }>
+                            | undefined;
+                        if (!notConnected) return null;
+                        return (
+                            <div className="mt-2">
+                                <ConnectApiKeyBlock
+                                    provider={notConnected.provider}
+                                />
+                            </div>
+                        );
+                    })()}
 
                 {/* Download card for each edited doc — only after streaming
                     stops, and deduped per document (keep the latest edit). */}

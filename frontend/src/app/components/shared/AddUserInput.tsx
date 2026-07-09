@@ -6,7 +6,7 @@ import { Loader2, UserPlus } from "lucide-react";
 import {
     lookupUserByEmail,
     type UserLookupResult,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,7 +56,7 @@ export function AddUserInput({
 
             const user = await lookupUserByEmail(email);
             if (!user.exists) {
-                setError(`${email} does not belong to a Mike user.`);
+                setError(`${email} does not belong to a Sterlex user.`);
                 return;
             }
 
@@ -108,7 +108,7 @@ export function AddUserInput({
                         onClick={() => void commitUser()}
                         disabled={busy || checking}
                         title={submitLabel}
-                        className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-blue-500/35 bg-blue-600/90 px-2.5 text-[11px] font-medium leading-none text-white shadow-[0_3px_9px_rgba(37,99,235,0.10),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.16),inset_0_-4px_9px_rgba(29,78,216,0.2)] backdrop-blur-xl transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-burgundy-500/35 bg-burgundy-600/90 px-2.5 text-[11px] font-medium leading-none text-white shadow-[0_3px_9px_rgba(110,31,45,0.14),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.16),inset_0_-4px_9px_rgba(74,20,31,0.24)] backdrop-blur-xl transition-colors hover:bg-burgundy-600 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {(busy || checking) && (
                             <Loader2 className="h-3 w-3 animate-spin" />

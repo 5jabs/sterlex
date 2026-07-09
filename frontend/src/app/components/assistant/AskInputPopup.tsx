@@ -16,7 +16,7 @@ import {
     AddDocumentsModal,
     invalidateDirectoryCache,
 } from "../modals/AddDocumentsModal";
-import { uploadStandaloneDocument } from "@/app/lib/mikeApi";
+import { uploadStandaloneDocument } from "@/app/lib/sterlexApi";
 import {
     SUPPORTED_DOCUMENT_ACCEPT,
     formatUnsupportedDocumentWarning,
@@ -242,7 +242,7 @@ export function AskInputPopup({
             if (item.skipped) return `${index + 1}. Skipped document request.`;
             return `${index + 1}. Documents attached: ${item.filenames.join(", ")}`;
         });
-        return `Responses to Mike's questions:\n${lines.join("\n\n")}`;
+        return `Responses to Sterlex's questions:\n${lines.join("\n\n")}`;
     };
 
     const submit = () => {
@@ -574,7 +574,7 @@ function OptionInput({
                                         e.stopPropagation();
                                         onAnswer(otherValue);
                                     }}
-                                    className="shrink-0 flex items-center gap-1 rounded-full bg-blue-600 px-3 py-0.5 font-sans text-[10px] text-white transition-colors hover:bg-blue-700 disabled:cursor-default disabled:opacity-40"
+                                    className="shrink-0 flex items-center gap-1 rounded-full bg-burgundy-600 px-3 py-0.5 font-sans text-[10px] text-white transition-colors hover:bg-burgundy-700 disabled:cursor-default disabled:opacity-40"
                                 >
                                     Set
                                     <CornerDownLeft className="h-3 w-3" />

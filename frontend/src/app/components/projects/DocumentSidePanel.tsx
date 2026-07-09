@@ -18,7 +18,7 @@ import { SpreadsheetView } from "@/app/components/shared/views/SpreadsheetView";
 import { WarningPopup } from "@/app/components/popups/WarningPopup";
 import type { Document } from "@/app/components/shared/types";
 import { isSpreadsheetFilename } from "@/app/components/shared/types";
-import type { DocumentVersion } from "@/app/lib/mikeApi";
+import type { DocumentVersion } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
 import { formatBytes } from "./ProjectPageParts";
 
@@ -29,7 +29,7 @@ const DEFAULT_DATA_COLUMN_WIDTH = 340;
 const RESIZER_WIDTH = 6;
 const MAX_PANEL_WIDTH = 1180;
 const primaryGlassButtonClass =
-    "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-blue-800/35 bg-blue-700/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(30,64,175,0.16),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(30,64,175,0.18)] backdrop-blur-xl transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
+    "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-burgundy-800/35 bg-burgundy-700/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(74,20,31,0.2),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(74,20,31,0.22)] backdrop-blur-xl transition-all hover:bg-burgundy-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
 const dangerGlassButtonClass =
     "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-red-700/35 bg-red-600/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(127,29,29,0.16),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(127,29,29,0.18)] backdrop-blur-xl transition-all hover:bg-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
 
@@ -411,7 +411,7 @@ export function DocumentSidePanel({
         >
             <div
                 onMouseDown={handlePanelResizeMouseDown}
-                className="absolute inset-y-0 left-0 z-20 hidden w-1 cursor-col-resize bg-transparent transition-colors hover:bg-blue-400/60 md:block"
+                className="absolute inset-y-0 left-0 z-20 hidden w-1 cursor-col-resize bg-transparent transition-colors hover:bg-burgundy-400/60 md:block"
                 title="Resize document view"
             />
             <div className="flex min-h-11 shrink-0 items-center justify-between gap-3 px-4 py-2 md:h-11 md:py-0">
@@ -507,7 +507,7 @@ export function DocumentSidePanel({
                     onMouseDown={handleResizeMouseDown}
                     className={cn(
                         "relative hidden cursor-col-resize transition-colors md:block",
-                        "bg-white/25 hover:bg-blue-400/60",
+                        "bg-white/25 hover:bg-burgundy-400/60",
                     )}
                     title="Resize document panel"
                 />
@@ -730,7 +730,7 @@ export function DocumentSidePanel({
                                                     )}
                                                 >
                                                     {selected && (
-                                                        <span className="absolute inset-y-0 left-0 w-[3px] bg-blue-500" />
+                                                        <span className="absolute inset-y-0 left-0 w-[3px] bg-burgundy-500" />
                                                     )}
                                                     <div className="flex min-w-0 items-center gap-2">
                                                         <div
@@ -748,7 +748,7 @@ export function DocumentSidePanel({
                                                                     : typeLabel ===
                                                                         "PDF"
                                                                     ? "text-red-600"
-                                                                    : "text-blue-600",
+                                                                    : "text-burgundy-600",
                                                             )}
                                                         >
                                                             {typeLabel}
@@ -796,7 +796,7 @@ export function DocumentSidePanel({
                                                                             deletingVersionId !=
                                                                                 null
                                                                         }
-                                                                        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                                                        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-burgundy-500 transition-colors hover:bg-burgundy-50 hover:text-burgundy-600 disabled:cursor-not-allowed disabled:opacity-40"
                                                                         aria-label={`Replace ${title}`}
                                                                         title="Replace version file"
                                                                     >
@@ -1003,7 +1003,7 @@ function VersionUploadSkeleton() {
             <div className="animate-pulse space-y-2">
                 <div className="flex items-center justify-between gap-3">
                     <div className="h-3 w-20 rounded-full bg-gray-200" />
-                    <div className="h-3 w-9 rounded-full bg-blue-100" />
+                    <div className="h-3 w-9 rounded-full bg-burgundy-100" />
                 </div>
                 <div className="h-2.5 w-4/5 rounded-full bg-gray-200" />
                 <div className="h-2.5 w-2/5 rounded-full bg-gray-200" />

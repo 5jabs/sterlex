@@ -178,7 +178,7 @@ function BulkEditActions({
             )}
             {onViewClick && first && (
                 <PillButton
-                    tone="blue"
+                    tone="burgundy"
                     size="sm"
                     onClick={() =>
                         onViewClick(first.annotation, first.filename)

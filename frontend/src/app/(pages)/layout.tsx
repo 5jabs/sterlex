@@ -9,13 +9,18 @@ import { SidebarContext } from "@/app/contexts/SidebarContext";
 import { PageChromeContext } from "@/app/contexts/PageChromeContext";
 import { AppSidebar } from "@/app/components/shared/AppSidebar";
 
-export default function MikeLayout({
+export default function SterlexLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     const { isAuthenticated, authLoading } = useAuth();
     const router = useRouter();
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
     const [mobileActionsContainer, setMobileActionsContainer] =
         useState<HTMLDivElement | null>(null);
 
@@ -74,7 +79,7 @@ export default function MikeLayout({
         }
     }, [authLoading, isAuthenticated, router]);
 
-    if (authLoading) {
+    if (!hasMounted || authLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />

@@ -318,7 +318,7 @@ export function EditCard({
                 </PillButton>
                 {onViewClick && (
                     <PillButton
-                        tone="blue"
+                        tone="burgundy"
                         size="sm"
                         onClick={() => onViewClick(annotation)}
                         disabled={resolved}

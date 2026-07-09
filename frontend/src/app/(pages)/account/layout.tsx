@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -34,6 +34,11 @@ export default function AccountLayout({
     const router = useRouter();
     const pathname = usePathname();
     const { isAuthenticated, authLoading } = useAuth();
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
@@ -41,10 +46,10 @@ export default function AccountLayout({
         }
     }, [isAuthenticated, authLoading, router]);
 
-    if (authLoading) {
+    if (!hasMounted || authLoading) {
         return (
             <div className="h-dvh flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-burgundy-600" />
             </div>
         );
     }
@@ -56,7 +61,7 @@ export default function AccountLayout({
     return (
         <div className="flex h-full flex-col overflow-y-auto">
             <header className="mx-auto flex h-16 w-full max-w-5xl shrink-0 items-end px-6 pb-2 md:h-24 md:pb-4">
-                <h1 className="text-4xl font-medium font-eb-garamond">
+                <h1 className="text-4xl font-medium font-serif">
                     Settings
                 </h1>
             </header>

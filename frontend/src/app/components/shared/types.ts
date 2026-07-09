@@ -1,4 +1,4 @@
-// Shared TypeScript types for Mike AI legal assistant
+// Shared TypeScript types for Sterlex AI legal assistant
 
 export interface Folder {
   id: string;
@@ -88,9 +88,16 @@ export interface EditAnnotation {
   status: "pending" | "accepted" | "rejected";
 }
 
+export type ApiKeyProvider = "claude" | "gemini" | "openai" | "courtlistener";
+
 export type AssistantEvent =
   | { type: "reasoning"; text: string; isStreaming?: boolean }
   | { type: "error"; message: string }
+  | {
+      type: "not_connected";
+      provider: ApiKeyProvider;
+      message: string;
+    }
   | {
       type: "tool_call_start";
       name: string;

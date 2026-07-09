@@ -4,7 +4,6 @@ import {
     use,
     useCallback,
     useEffect,
-    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -31,7 +30,7 @@ import {
     deleteProjectFolder,
     moveDocumentToFolder,
     moveSubfolderToFolder,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { useAssistantChat } from "@/app/hooks/useAssistantChat";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { UserMessage } from "@/app/components/assistant/UserMessage";
@@ -43,9 +42,7 @@ import { PdfView } from "@/app/components/shared/views/PdfView";
 import { SpreadsheetView } from "@/app/components/shared/views/SpreadsheetView";
 import { OwnerOnlyPopup } from "@/app/components/popups/OwnerOnlyPopup";
 import { DocxView } from "@/app/components/shared/views/DocxView";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { useSidebar } from "@/app/contexts/SidebarContext";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import { HeaderActionsMenu } from "@/app/components/shared/HeaderActionsMenu";
@@ -90,65 +87,24 @@ function isDocxTab(filename: string) {
     return ext === "docx" || ext === "doc";
 }
 
-const ICON_SIZE = 28;
-const GAP = 14;
 const EXPLORER_MIN = 160;
 const EXPLORER_DEFAULT = 280;
 const CHAT_MIN = 320;
 const CHAT_DEFAULT = 420;
 const DEFAULT_ASSISTANT_BOTTOM_PADDING = 116;
 
-function AssistantGreeting({ username }: { username: string }) {
-    const { profile } = useUserProfile();
-    const [loaded, setLoaded] = useState(false);
-    const [iconOffset, setIconOffset] = useState(0);
-    const [textOffset, setTextOffset] = useState(0);
-    const textRef = useRef<HTMLHeadingElement>(null);
-
-    useLayoutEffect(() => {
-        if (!profile || !textRef.current) return;
-        const h1Width = textRef.current.offsetWidth;
-        setIconOffset((h1Width + GAP) / 2);
-        setTextOffset((ICON_SIZE + GAP) / 2);
-    }, [profile]);
-
-    useEffect(() => {
-        if (!iconOffset) return;
-        const t = setTimeout(() => setLoaded(true), 100);
-        return () => clearTimeout(t);
-    }, [iconOffset]);
-
+function AssistantGreeting() {
     return (
-        <div className="flex-1 flex items-center justify-center">
-            <div className="relative flex items-center justify-center h-[28px]">
-                <div
-                    className="absolute h-[30px]"
-                    style={{
-                        left: "50%",
-                        transform: loaded
-                            ? `translateX(calc(-50% - ${iconOffset}px))`
-                            : "translateX(-50%)",
-                        transition:
-                            "transform 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                    }}
-                >
-                    <MikeIcon size={ICON_SIZE} />
-                </div>
-                <h1
-                    ref={textRef}
-                    className="absolute text-3xl font-serif font-light text-gray-900 whitespace-nowrap"
-                    style={{
-                        left: "50%",
-                        transform: loaded
-                            ? `translateX(calc(-50% + ${textOffset}px))`
-                            : "translateX(-50%)",
-                        opacity: loaded ? 1 : 0,
-                        transition:
-                            "transform 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 800ms ease-in-out 300ms",
-                    }}
-                >
-                    Hi, {username}
-                </h1>
+        <div className="flex-1 flex items-center justify-center px-8">
+            <div className="max-w-sm text-center space-y-2">
+                <p className="font-serif text-base text-gray-500">
+                    Use this chat to discuss and edit this project&apos;s
+                    documents — including creating new versions.
+                </p>
+                <p className="font-serif text-sm text-gray-400">
+                    Tip: drag a document from the Explorer into the chat to
+                    add it as context.
+                </p>
             </div>
         </div>
     );
@@ -196,7 +152,7 @@ function Divider({ onDrag }: { onDrag: (dx: number) => void }) {
                 className="absolute inset-y-0 -left-2 -right-2 cursor-col-resize flex items-stretch justify-center"
             >
                 {isDragging && (
-                    <div className="w-1 bg-blue-500 transition-colors" />
+                    <div className="w-1 bg-burgundy-500 transition-colors" />
                 )}
             </div>
         </div>
@@ -209,9 +165,6 @@ export default function ProjectAssistantChatPage({ params }: Props) {
 
     const { setSidebarOpen } = useSidebar();
     const { user } = useAuth();
-    const { profile } = useUserProfile();
-    const username =
-        profile?.displayName?.trim() || user?.email?.split("@")[0] || "there";
 
     const [project, setProject] = useState<Project | null>(null);
     const [chatTitle, setChatTitle] = useState<string | null>(null);
@@ -581,7 +534,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
 
     const handleChatDrop = (e: React.DragEvent) => {
         e.preventDefault();
-        const docId = e.dataTransfer.getData("application/mike-doc");
+        const docId = e.dataTransfer.getData("application/sterlex-doc");
         if (!docId) return;
         const doc = project?.documents?.find((d) => d.id === docId);
         if (doc) chatInputRef.current?.addDoc(doc);
@@ -598,8 +551,15 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         }
     }
 
+    const isProjectOwner = project?.is_owner !== false;
+
     async function handleDeleteChat() {
-        if (chatOwnerId && user?.id && chatOwnerId !== user.id) {
+        if (
+            !isProjectOwner &&
+            chatOwnerId &&
+            user?.id &&
+            chatOwnerId !== user.id
+        ) {
             setOwnerOnlyAction("delete this chat");
             return;
         }
@@ -613,7 +573,12 @@ export default function ProjectAssistantChatPage({ params }: Props) {
     }
 
     async function handleRenameChat() {
-        if (chatOwnerId && user?.id && chatOwnerId !== user.id) {
+        if (
+            !isProjectOwner &&
+            chatOwnerId &&
+            user?.id &&
+            chatOwnerId !== user.id
+        ) {
             setOwnerOnlyAction("rename this chat");
             return;
         }
@@ -867,10 +832,10 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                                 // Only show the upload overlay for external file drags, not internal moves
                                 const isInternal =
                                     Array.from(e.dataTransfer.types).includes(
-                                        "application/mike-doc",
+                                        "application/sterlex-doc",
                                     ) ||
                                     Array.from(e.dataTransfer.types).includes(
-                                        "application/mike-folder",
+                                        "application/sterlex-folder",
                                     );
                                 if (!isInternal) setExplorerDragOver(true);
                             }}
@@ -932,17 +897,17 @@ export default function ProjectAssistantChatPage({ params }: Props) {
 
                             {/* Drop overlay */}
                             <div
-                                className={`flex-1 overflow-y-auto relative h-full ${explorerDragOver ? "bg-blue-50" : ""}`}
+                                className={`flex-1 overflow-y-auto relative h-full ${explorerDragOver ? "bg-burgundy-50" : ""}`}
                                 onDragOver={(e) => {
                                     e.preventDefault();
                                 }}
                                 onDrop={async (e) => {
                                     e.preventDefault();
                                     const docId = e.dataTransfer.getData(
-                                        "application/mike-doc",
+                                        "application/sterlex-doc",
                                     );
                                     const folderId = e.dataTransfer.getData(
-                                        "application/mike-folder",
+                                        "application/sterlex-folder",
                                     );
                                     if (docId) {
                                         e.stopPropagation();
@@ -956,7 +921,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                             >
                                 {explorerDragOver && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                                        <p className="text-xs text-blue-500 font-medium">
+                                        <p className="text-xs text-burgundy-500 font-medium">
                                             Drop to upload
                                         </p>
                                     </div>
@@ -1017,7 +982,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                                     ext === "pdf"
                                         ? "text-red-500"
                                         : ext === "doc" || ext === "docx"
-                                          ? "text-blue-500"
+                                          ? "text-burgundy-500"
                                           : "text-gray-400";
                                 // Pull the doc's latest_version_number out
                                 // of the project state so the tab shows V#
@@ -1183,7 +1148,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="flex-1 flex flex-col min-h-0">
-                            <AssistantGreeting username={username} />
+                            <AssistantGreeting />
                         </div>
                     ) : (
                         <div

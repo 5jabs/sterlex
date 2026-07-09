@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { toClaudeTools } from "./tools";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
+import { NotConnectedError } from "../notConnectedError";
 
 type ContentBlock =
   | { type: "text"; text: string }
@@ -24,7 +25,8 @@ const MAX_TOKENS = 16384;
 function apiKey(override?: string | null): string {
   const key = override?.trim() || process.env.ANTHROPIC_API_KEY?.trim() || "";
   if (!key) {
-    throw new Error(
+    throw new NotConnectedError(
+      "claude",
       "Anthropic API key is not configured. Set ANTHROPIC_API_KEY or add a user Anthropic key.",
     );
   }

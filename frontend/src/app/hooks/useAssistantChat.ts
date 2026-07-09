@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   streamChat,
   streamProjectChat,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/sterlexApi";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { useGenerateChatTitle } from "./useGenerateChatTitle";
 import type {
@@ -422,6 +422,34 @@ export function useAssistantChat({
                 ...assistantMessage,
                 events: snapshot,
                 error: message,
+              }));
+              setIsResponseLoading(false);
+              setIsLoadingCitations(false);
+              continue;
+            }
+
+            if (data.type === "not_connected") {
+              const provider = (
+                ["claude", "gemini", "openai", "courtlistener"] as const
+              ).includes(data.provider)
+                ? data.provider
+                : "claude";
+              const message = readableStreamError(data.message);
+              clearStreamingPlaceholders();
+              finalizeStreamingContent();
+              finalizeStreamingReasoning();
+              eventsRef.current = [
+                ...eventsRef.current,
+                { type: "not_connected", provider, message },
+              ];
+              const snapshot = [...eventsRef.current];
+              // Deliberately don't set `assistantMessage.error` here — the
+              // connect-your-key card (rendered from the event itself) is
+              // the visible signal for this case, and setting `.error` would
+              // also surface the raw message as a redundant red paragraph.
+              updateLatestAssistantMessage((assistantMessage) => ({
+                ...assistantMessage,
+                events: snapshot,
               }));
               setIsResponseLoading(false);
               setIsLoadingCitations(false);
