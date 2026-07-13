@@ -345,32 +345,97 @@
         }
     }
 
-    @keyframes sterlex-flow-blink {
-        0%,
-        100% {
-            opacity: 0.2;
-            transform: translateX(0);
-        }
-        50% {
-            opacity: 1;
-            transform: translateX(3px);
-        }
-    }
-
-    @keyframes sterlex-flow-blink-y {
-        0%,
-        100% {
-            opacity: 0.2;
-            transform: translateY(0);
-        }
-        50% {
-            opacity: 1;
-            transform: translateY(3px);
-        }
-    }
-
     .animate-shimmer {
         animation: shimmer 8s linear infinite;
+    }
+
+    /* ── Landing page motion ──────────────────────────────── */
+    .reveal {
+        opacity: 0;
+        transform: translateY(28px);
+        transition:
+            opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+            transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-scale {
+        transform: translateY(18px) scale(0.965);
+    }
+
+    .reveal-visible {
+        opacity: 1;
+        transform: none;
+    }
+
+    .hero-enter {
+        opacity: 0;
+        animation: heroEnter 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes heroEnter {
+        from {
+            opacity: 0;
+            transform: translateY(26px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @keyframes blobDriftA {
+        0%,
+        100% {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+        50% {
+            transform: translate3d(70px, -40px, 0) scale(1.12);
+        }
+    }
+
+    @keyframes blobDriftB {
+        0%,
+        100% {
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+        50% {
+            transform: translate3d(-60px, 35px, 0) scale(1.06);
+        }
+    }
+
+    /* Data-flow diagram: the solid line "draws itself in" once the
+       wrapping .reveal element becomes visible. */
+    .flow-path {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        transition: stroke-dashoffset 1.4s ease 0.3s;
+    }
+
+    .reveal-visible .flow-path {
+        stroke-dashoffset: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal,
+        .reveal-scale {
+            opacity: 1;
+            transform: none;
+            transition: none;
+        }
+
+        .hero-enter {
+            animation: none;
+            opacity: 1;
+        }
+
+        .flow-path {
+            stroke-dashoffset: 0;
+            transition: none;
+        }
+
+        .flow-dot {
+            display: none;
+        }
     }
 }
 
