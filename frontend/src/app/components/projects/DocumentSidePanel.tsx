@@ -29,7 +29,7 @@ const DEFAULT_DATA_COLUMN_WIDTH = 340;
 const RESIZER_WIDTH = 6;
 const MAX_PANEL_WIDTH = 1180;
 const primaryGlassButtonClass =
-    "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-burgundy-800/35 bg-burgundy-700/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(74,20,31,0.2),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(74,20,31,0.22)] backdrop-blur-xl transition-all hover:bg-burgundy-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
+    "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-burgundy-800/35 bg-burgundy-700/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(28,27,22,0.2),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(28,27,22,0.22)] backdrop-blur-xl transition-all hover:bg-burgundy-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
 const dangerGlassButtonClass =
     "inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-red-700/35 bg-red-600/90 px-3 text-xs font-medium text-white shadow-[0_3px_9px_rgba(127,29,29,0.16),inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-4px_9px_rgba(127,29,29,0.18)] backdrop-blur-xl transition-all hover:bg-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100";
 

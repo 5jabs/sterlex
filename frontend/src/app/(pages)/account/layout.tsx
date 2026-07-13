@@ -49,7 +49,7 @@ export default function AccountLayout({
     if (!hasMounted || authLoading) {
         return (
             <div className="h-dvh flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-burgundy-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
             </div>
         );
     }

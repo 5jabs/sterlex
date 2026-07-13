@@ -108,7 +108,7 @@ export function AddUserInput({
                         onClick={() => void commitUser()}
                         disabled={busy || checking}
                         title={submitLabel}
-                        className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-burgundy-500/35 bg-burgundy-600/90 px-2.5 text-[11px] font-medium leading-none text-white shadow-[0_3px_9px_rgba(110,31,45,0.14),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.16),inset_0_-4px_9px_rgba(74,20,31,0.24)] backdrop-blur-xl transition-colors hover:bg-burgundy-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-burgundy-500/35 bg-burgundy-600/90 px-2.5 text-[11px] font-medium leading-none text-white shadow-[0_3px_9px_rgba(38,37,30,0.14),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.16),inset_0_-4px_9px_rgba(28,27,22,0.24)] backdrop-blur-xl transition-colors hover:bg-burgundy-600 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {(busy || checking) && (
                             <Loader2 className="h-3 w-3 animate-spin" />

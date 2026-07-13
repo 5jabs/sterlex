@@ -2,7 +2,7 @@
 
 import React from "react";
 
-// A small status dot: burgundy + pulsing/ringed while active, solid green on
+// A small status dot: blue + pulsing/ringed while active, solid green on
 // success, solid red on error, muted gray at rest. Replaces the old spinning
 // pinwheel mark (a leftover "Mike" glyph) everywhere this component is used.
 export function SterlexIcon({
@@ -27,7 +27,7 @@ export function SterlexIcon({
         : done
           ? "bg-green-500"
           : spin
-            ? "bg-burgundy-500"
+            ? "bg-accent-blue"
             : "bg-gray-800";
 
     return (
@@ -37,7 +37,7 @@ export function SterlexIcon({
         >
             {spin && (
                 <span
-                    className="absolute inline-flex rounded-full bg-burgundy-400 opacity-50 animate-ping"
+                    className="absolute inline-flex rounded-full bg-accent-blue opacity-50 animate-ping"
                     style={{ width: dotSize * 1.8, height: dotSize * 1.8 }}
                 />
             )}

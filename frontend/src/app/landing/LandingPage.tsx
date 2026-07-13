@@ -21,16 +21,12 @@ import {
     Cpu,
     Sparkles,
     Check,
-    Linkedin,
-    Twitter,
-    Mail,
 } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 
 const NAV_LINKS = [
     { label: "Product", href: "#features" },
     { label: "Who it's for", href: "#audiences" },
-    { label: "Pricing", href: "#pricing" },
     { label: "FAQ", href: "#faq" },
 ];
 
@@ -138,10 +134,10 @@ function SiteNav() {
 
 function Hero() {
     return (
-        <section className="relative overflow-hidden bg-white pt-20 pb-24 md:pt-28 md:pb-32">
+        <section className="relative isolate overflow-hidden bg-white pt-20 pb-24 md:pt-28 md:pb-32">
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[600px] bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(110,31,45,0.08),transparent)]"
+                className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[600px] bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(38,37,30,0.06),transparent)]"
             />
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="mx-auto max-w-3xl text-center">
@@ -159,13 +155,13 @@ function Hero() {
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Link
                             href="/signup"
-                            className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy-600 px-7 py-3.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(110,31,45,0.28)] transition-colors hover:bg-burgundy-700"
+                            className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy-600 px-7 py-3.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(38,37,30,0.28)] transition-colors hover:bg-burgundy-700"
                         >
                             Start your 7 day free trial
                             <ArrowRight className="h-4 w-4" />
                         </Link>
                         <p className="text-xs text-gray-400">
-                            No credit card required. Cancel anytime.
+                            Cancel anytime.
                         </p>
                     </div>
                 </div>
@@ -233,7 +229,7 @@ const AUDIENCES: Audience[] = [
 
 function Audiences() {
     return (
-        <section id="audiences" className="bg-gray-50 py-24 md:py-32">
+        <section id="audiences" className="bg-offwhite py-24 md:py-32">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <h2 className="text-center font-serif text-3xl font-medium text-gray-900 sm:text-4xl">
                     Built for every kind of deal team
@@ -371,12 +367,55 @@ const DEEP_AI_PILLARS: DeepAiPillar[] = [
     },
 ];
 
+function LLMStackBox() {
+    return (
+        <div className="w-full max-w-[190px] shrink-0 rounded-2xl border border-burgundy-500/30 bg-gradient-to-b from-burgundy-950/60 to-black/50 p-2 shadow-[0_0_35px_rgba(38,37,30,0.3)]">
+            <div className="flex flex-col gap-1.5">
+                {["Claude", "GPT", "Gemini"].map((model) => (
+                    <div
+                        key={model}
+                        className="rounded-lg bg-white/5 px-3 py-2 text-center text-sm font-medium text-gray-100"
+                    >
+                        {model}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function FlowConnector() {
+    return (
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center lg:h-px lg:w-14">
+            <div className="absolute inset-x-0 top-1/2 hidden -translate-y-1/2 border-t-2 border-dashed border-white/20 lg:block" />
+            <div className="absolute inset-y-0 left-1/2 block -translate-x-1/2 border-l-2 border-dashed border-white/20 lg:hidden" />
+            <ArrowRight
+                className="relative hidden h-4 w-4 text-burgundy-300 lg:block"
+                style={{ animation: "sterlex-flow-blink 1.6s ease-in-out infinite" }}
+            />
+            <ChevronDown
+                className="relative block h-4 w-4 text-burgundy-300 lg:hidden"
+                style={{ animation: "sterlex-flow-blink-y 1.6s ease-in-out infinite" }}
+            />
+        </div>
+    );
+}
+
 function DeepAi() {
     return (
-        <section className="relative overflow-hidden bg-black py-24 md:py-32">
+        <section className="relative isolate overflow-hidden bg-black py-24 md:py-32">
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(110,31,45,0.25),transparent)]"
+                className="pointer-events-none absolute inset-0 -z-20 opacity-50"
+                style={{
+                    backgroundImage:
+                        "radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px)",
+                    backgroundSize: "24px 24px",
+                }}
+            />
+            <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(255,255,255,0.08),transparent)]"
             />
             <div className="mx-auto max-w-5xl px-6 text-center lg:px-8">
                 <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl md:text-5xl">
@@ -388,31 +427,19 @@ function DeepAi() {
                     beginning. That is how we turn models into work product.
                 </p>
 
-                <div className="mt-16 flex flex-col items-center justify-center gap-4 sm:gap-6 lg:flex-row">
-                    <div className="flex flex-wrap items-center justify-center gap-3">
-                        {["Claude", "GPT", "Gemini"].map((model) => (
-                            <span
-                                key={model}
-                                className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-200 sm:px-4 sm:py-2 sm:text-sm"
-                            >
-                                {model}
-                            </span>
-                        ))}
-                    </div>
-                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-gray-600 lg:block" />
-                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-600 lg:hidden" />
+                <div className="mt-16 flex flex-col items-center justify-center gap-2 lg:flex-row lg:gap-0">
+                    <LLMStackBox />
+                    <FlowConnector />
                     <div className="text-xs font-medium text-gray-400">
                         Real world
                         <br />
                         information
                     </div>
-                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-gray-600 lg:block" />
-                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-600 lg:hidden" />
-                    <span className="font-bitter text-lg font-medium text-burgundy-400">
+                    <FlowConnector />
+                    <span className="font-bitter text-lg font-medium text-white">
                         Sterlex
                     </span>
-                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-gray-600 lg:block" />
-                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-600 lg:hidden" />
+                    <FlowConnector />
                     <span className="rounded-full border border-burgundy-400/50 bg-burgundy-600/25 px-4 py-2 text-sm font-medium text-white">
                         Polished work
                     </span>
@@ -461,7 +488,7 @@ const COMPARISON_ROWS = [
 
 function Comparison() {
     return (
-        <section id="pricing" className="bg-gray-50 py-24 md:py-32">
+        <section id="pricing" className="bg-offwhite py-24 md:py-32">
             <div className="mx-auto max-w-5xl px-6 lg:px-8">
                 <div className="text-center">
                     <h2 className="font-serif text-3xl font-medium text-gray-900 sm:text-4xl">
@@ -477,7 +504,7 @@ function Comparison() {
                 <div className="mt-14 overflow-hidden rounded-2xl border border-gray-200 bg-white">
                     <div className="grid grid-cols-3 bg-gray-100 text-[11px] font-medium uppercase tracking-wider text-gray-600 sm:text-xs">
                         <div className="px-3 py-4 sm:px-6">&nbsp;</div>
-                        <div className="border-l border-gray-200 px-3 py-4 font-bitter text-sm font-medium text-gray-900 sm:px-6">
+                        <div className="border-l border-gray-200 px-3 py-4 font-bitter text-base font-medium normal-case tracking-normal text-burgundy-600 sm:px-6">
                             Sterlex
                         </div>
                         <div className="break-words border-l border-gray-200 px-3 py-4 sm:px-6">
@@ -563,10 +590,6 @@ const FAQS = [
         q: "Does Sterlex verify case law citations?",
         a: "Yes. Citations are checked against real court records before they reach your answer, so you are not citing a case that does not exist.",
     },
-    {
-        q: "What happens after the 7 day trial?",
-        a: "You choose a plan and continue, or you walk away. No auto lock in contracts.",
-    },
 ];
 
 function Faq() {
@@ -613,68 +636,16 @@ function Faq() {
     );
 }
 
-const FOOTER_LINKS = [
-    { label: "About", href: "/support" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "Legal", href: "/support" },
-];
-
 function Footer() {
     return (
         <footer className="bg-gray-950 py-14 text-gray-400">
-            <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="flex flex-col items-center justify-between gap-8 sm:flex-row">
-                    <div>
-                        <span className="font-bitter text-xl font-medium text-white">
-                            Sterlex
-                        </span>
-                        <p className="mt-2 max-w-xs text-sm text-gray-500">
-                            Enterprise legal AI. Without the enterprise
-                            price.
-                        </p>
-                    </div>
-
-                    <nav className="flex flex-wrap items-center justify-center gap-6">
-                        {FOOTER_LINKS.map((link) => (
-                            <a
-                                key={link.label}
-                                href={link.href}
-                                className="text-sm text-gray-400 transition-colors hover:text-white"
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                    </nav>
-
-                    <div className="flex items-center gap-4">
-                        <a
-                            href="https://linkedin.com"
-                            aria-label="LinkedIn"
-                            className="text-gray-500 transition-colors hover:text-white"
-                        >
-                            <Linkedin className="h-4 w-4" />
-                        </a>
-                        <a
-                            href="https://twitter.com"
-                            aria-label="X (Twitter)"
-                            className="text-gray-500 transition-colors hover:text-white"
-                        >
-                            <Twitter className="h-4 w-4" />
-                        </a>
-                        <a
-                            href="mailto:hello@sterlex.ai"
-                            aria-label="Email"
-                            className="text-gray-500 transition-colors hover:text-white"
-                        >
-                            <Mail className="h-4 w-4" />
-                        </a>
-                    </div>
-                </div>
-
-                <div className="mt-10 border-t border-white/10 pt-8 text-center text-xs text-gray-500">
-                    © {new Date().getFullYear()} Sterlex. All rights
-                    reserved.
-                </div>
+            <div className="mx-auto max-w-7xl px-6 text-center lg:px-8">
+                <span className="font-bitter text-xl font-medium text-white">
+                    Sterlex
+                </span>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-gray-500">
+                    Enterprise legal AI. Without the enterprise price.
+                </p>
             </div>
         </footer>
     );
