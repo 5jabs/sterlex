@@ -371,6 +371,40 @@ create index if not exists workflow_shares_workflow_id_idx
 create index if not exists workflow_shares_email_idx
   on public.workflow_shares(shared_with_email);
 
+-- Review queue for user-submitted workflows that may later be published to
+-- the open-source workflow repository. The backend writes with the service
+-- role.
+create table if not exists public.workflow_open_source_submissions (
+  id uuid primary key default gen_random_uuid(),
+  workflow_id uuid not null references public.workflows(id) on delete cascade,
+  submitted_by_user_id text not null,
+  submitter_email text,
+  submitter_name text,
+  contributor_mode text not null default 'anonymous',
+  status text not null default 'pending',
+  snapshot jsonb not null,
+  submitted_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  review_notes text,
+  constraint workflow_open_source_submissions_status_check
+    check (status in ('pending', 'approved', 'rejected')),
+  constraint workflow_open_source_submissions_contributor_mode_check
+    check (contributor_mode in ('named', 'anonymous'))
+);
+
+create unique index if not exists idx_workflow_open_source_submissions_pending
+  on public.workflow_open_source_submissions(workflow_id, submitted_by_user_id)
+  where status = 'pending';
+
+create index if not exists idx_workflow_open_source_submissions_reviewer_queue
+  on public.workflow_open_source_submissions(status, submitted_at desc);
+
+create index if not exists idx_workflow_open_source_submissions_submitter
+  on public.workflow_open_source_submissions(submitted_by_user_id, submitted_at desc);
+
+alter table public.workflow_open_source_submissions enable row level security;
+
 create or replace function public.get_workflows_overview(
   p_user_id text,
   p_user_email text default null,
@@ -788,6 +822,31 @@ create index if not exists tabular_review_chat_messages_chat_idx
   on public.tabular_review_chat_messages(chat_id, created_at);
 
 -- ---------------------------------------------------------------------------
+-- Contact messages
+-- ---------------------------------------------------------------------------
+-- Landing-page contact form submissions. The landing server route writes
+-- with the Supabase service role; browser anon/authenticated roles should
+-- not have direct table access.
+
+create table if not exists public.contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  name text,
+  email text not null,
+  subject text,
+  message text not null,
+  source text not null default 'landing',
+  user_agent text,
+  ip_hash text,
+  created_at timestamptz not null default now(),
+  responded_at timestamptz
+);
+
+create index if not exists idx_contact_messages_created_at
+  on public.contact_messages(created_at desc);
+
+alter table public.contact_messages enable row level security;
+
+-- ---------------------------------------------------------------------------
 -- CourtListener bulk-data indexes
 -- ---------------------------------------------------------------------------
 
@@ -844,6 +903,7 @@ revoke all on public.document_edits from anon, authenticated;
 revoke all on public.workflows from anon, authenticated;
 revoke all on public.hidden_workflows from anon, authenticated;
 revoke all on public.workflow_shares from anon, authenticated;
+revoke all on public.workflow_open_source_submissions from anon, authenticated;
 revoke all on public.chats from anon, authenticated;
 revoke all on public.chat_messages from anon, authenticated;
 revoke all on public.tabular_reviews from anon, authenticated;
@@ -858,3 +918,4 @@ revoke all on public.user_mcp_connector_tools from anon, authenticated;
 revoke all on public.user_mcp_tool_audit_logs from anon, authenticated;
 revoke all on public.courtlistener_citation_index from anon, authenticated;
 revoke all on public.courtlistener_opinion_cluster_index from anon, authenticated;
+revoke all on public.contact_messages from anon, authenticated;
