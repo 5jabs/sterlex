@@ -67,7 +67,7 @@ export function ModelToggle({ value, onChange, apiKeys }: Props) {
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"
-                    className={`flex items-center gap-1.5 rounded-lg px-2 h-8 text-sm transition-colors cursor-pointer text-gray-400 hover:bg-gray-100 hover:text-gray-700 ${isOpen ? "bg-gray-100 text-gray-700" : ""}`}
+                    className={`flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm transition-colors cursor-pointer text-gray-400 hover:bg-gray-100 hover:text-gray-700 md:h-8 ${isOpen ? "bg-gray-100 text-gray-700" : ""}`}
                     title={
                         !selectedAvailable
                             ? "API key missing for selected model"

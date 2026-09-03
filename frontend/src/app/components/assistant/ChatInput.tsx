@@ -256,7 +256,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                                     onClick={() => setWorkflowModalOpen(true)}
                                     aria-label="Open workflows"
                                     className={cn(
-                                        "flex items-center gap-1.5 rounded-lg px-2 h-8 text-sm transition-colors",
+                                        "flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm transition-colors md:h-8",
                                         selectedWorkflow
                                             ? "text-burgundy-600 hover:bg-white/55"
                                             : "text-gray-400 hover:bg-white/55 hover:text-gray-700",
@@ -285,7 +285,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                                     onClick={onProjectsClick}
                                     aria-label="Open projects"
                                     className={cn(
-                                        "flex items-center gap-1.5 rounded-lg px-2 h-8 text-sm text-gray-400 hover:text-gray-700 transition-colors",
+                                        "flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-gray-400 hover:text-gray-700 transition-colors",
                                         "hover:bg-white/55",
                                     )}
                                 >
