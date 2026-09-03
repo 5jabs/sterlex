@@ -30,7 +30,7 @@ export function SourcesButton({ hideLabel }: { hideLabel?: boolean }) {
                     aria-label="Sources"
                     title="Sources"
                     className={cn(
-                        "flex items-center gap-1.5 rounded-lg px-2 h-8 text-sm transition-colors cursor-pointer text-gray-400 hover:bg-white/55 hover:text-gray-700",
+                        "flex h-11 items-center gap-1.5 rounded-lg px-2 text-sm transition-colors cursor-pointer text-gray-400 hover:bg-white/55 hover:text-gray-700 md:h-8",
                         isOpen ? "bg-white/55 text-gray-700" : "",
                     )}
                 >

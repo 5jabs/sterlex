@@ -22,7 +22,7 @@ const toneClasses: Record<PillButtonTone, string> = {
 
 const sizeClasses: Record<PillButtonSize, string> = {
     sm: "px-2 py-1 text-xs",
-    normal: "px-4 py-1.5 text-sm",
+    normal: "min-h-11 px-4 py-1.5 text-sm md:min-h-0",
 };
 
 export function PillButton({

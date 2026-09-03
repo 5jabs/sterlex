@@ -233,7 +233,7 @@ export function AssistantSidePanel({
                                 key={tab.id}
                                 onClick={() => onActivateTab(tab.id)}
                                 className={cn(
-                                    "group relative flex items-center gap-1.5 pl-3 pr-1.5 h-8 min-w-0 max-w-[220px] rounded-t-lg cursor-pointer select-none transition-colors",
+                                    "group relative flex h-11 min-w-0 max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-t-lg pl-3 pr-1.5 transition-colors md:h-8",
                                     isActive
                                         ? "z-20 bg-white text-gray-800 before:content-[''] before:absolute before:bottom-0 before:-left-2 before:z-20 before:h-2 before:w-2 before:rounded-br-lg before:shadow-[4px_4px_0_4px_white] before:transition-shadow after:content-[''] after:absolute after:bottom-0 after:-right-2 after:z-20 after:h-2 after:w-2 after:rounded-bl-lg after:shadow-[-4px_4px_0_4px_white] after:transition-shadow"
                                         : "z-10 bg-gray-100 text-gray-600 hover:bg-gray-100 before:content-[''] before:absolute before:bottom-0 before:-left-2 before:h-2 before:w-2 before:rounded-br-lg before:shadow-[4px_4px_0_4px_#f3f4f6] before:transition-shadow after:content-[''] after:absolute after:bottom-0 after:-right-2 after:h-2 after:w-2 after:rounded-bl-lg after:shadow-[-4px_4px_0_4px_#f3f4f6] after:transition-shadow",
@@ -261,7 +261,7 @@ export function AssistantSidePanel({
                                         e.stopPropagation();
                                         onCloseTab(tab.id);
                                     }}
-                                    className="shrink-0 rounded-full p-0.5 text-gray-400 hover:text-gray-700"
+                                    className="shrink-0 rounded-full p-2 text-gray-400 hover:text-gray-700 md:p-0.5"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -271,7 +271,7 @@ export function AssistantSidePanel({
                 </div>
                 <button
                     onClick={onCloseAll}
-                    className="shrink-0 mb-1 ml-1 rounded-lg p-1.5 text-gray-400 hover:text-gray-700"
+                    className="mb-1 ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg p-1.5 text-gray-400 hover:text-gray-700 md:h-auto md:w-auto"
                     title="Close panel"
                 >
                     <X className="h-4 w-4" />

@@ -292,7 +292,7 @@ export function TRSidePanel({
                             }}
                             disabled={regenerating}
                             title="Regenerate"
-                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40"
+                            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 md:min-h-0 md:min-w-0"
                         >
                             {regenerating ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -303,7 +303,7 @@ export function TRSidePanel({
                     )}
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 md:min-h-0 md:min-w-0"
                     >
                         <X className="h-4 w-4" />
                     </button>
