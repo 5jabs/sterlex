@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PanelLeft } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { ChatHistoryProvider } from "@/app/contexts/ChatHistoryContext";
@@ -16,6 +16,7 @@ export default function SterlexLayout({
 }) {
     const { isAuthenticated, authLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [hasMounted, setHasMounted] = useState(false);
 
     useEffect(() => {
@@ -56,6 +57,12 @@ export default function SterlexLayout({
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, [isSidebarOpen, isSidebarOpenDesktop]);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+            setIsSidebarOpen(false);
+        }
+    }, [pathname]);
 
     const handleSidebarToggle = () => {
         if (window.innerWidth >= 768) {
@@ -107,18 +114,18 @@ export default function SterlexLayout({
                         },
                     }}
                 >
-                    <div className="h-dvh flex flex-col bg-gray-50/80">
-                        <div className="flex-1 flex min-w-0 overflow-visible">
+                    <div className="flex h-dvh max-w-[100vw] flex-col overflow-hidden bg-gray-50/80">
+                        <div className="flex min-w-0 flex-1 overflow-hidden">
                             <AppSidebar
                                 isOpen={isSidebarOpen}
                                 onToggle={handleSidebarToggle}
                             />
-                            <div className="flex-1 flex flex-col h-dvh md:overflow-hidden relative w-full">
+                            <div className="relative flex h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden">
                                 {/* Mobile header */}
-                                <div className="relative z-20 flex md:hidden items-center gap-3 overflow-visible px-4 pt-3 pb-2 shrink-0">
+                                <div className="relative z-20 flex shrink-0 items-center gap-3 overflow-visible px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
                                     <button
                                         onClick={handleSidebarToggle}
-                                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-gray-700 shadow-[0_8px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/70 backdrop-blur-md transition-all hover:bg-white/90 active:scale-95"
+                                        className="flex h-11 w-11 items-center justify-center rounded-full bg-white/70 text-gray-700 shadow-[0_8px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/70 backdrop-blur-md transition-all hover:bg-white/90 active:scale-95"
                                         title="Open sidebar"
                                         aria-label="Open sidebar"
                                     >
@@ -129,7 +136,7 @@ export default function SterlexLayout({
                                         className="ml-auto flex min-w-0 flex-1 items-center justify-end"
                                     />
                                 </div>
-                                <main className="flex h-full w-full flex-1 flex-col overflow-y-auto md:overflow-hidden">
+                                <main className="flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain md:overflow-hidden">
                                     {children}
                                 </main>
                             </div>

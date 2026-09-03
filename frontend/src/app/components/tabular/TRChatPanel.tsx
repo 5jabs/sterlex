@@ -35,6 +35,7 @@ import {
 } from "@/app/lib/modelAvailability";
 import type { ApiKeyState } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -646,12 +647,17 @@ function TRChatInput({
                         resizeTextarea(e.target);
                     }}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAction();
+                        if (e.key !== "Enter" || e.shiftKey) return;
+                        if (
+                            typeof window !== "undefined" &&
+                            window.matchMedia("(pointer: coarse)").matches
+                        ) {
+                            return;
                         }
+                        e.preventDefault();
+                        handleAction();
                     }}
-                    className="w-full resize-none text-sm bg-transparent outline-none placeholder:text-gray-400 leading-6 max-h-48 overflow-hidden border-0 p-0 pl-3 pr-2 pt-0.5"
+                    className="w-full resize-none bg-transparent outline-none placeholder:text-gray-400 leading-6 max-h-48 overflow-hidden border-0 p-0 pl-3 pr-2 pt-0.5 text-base md:text-sm"
                 />
                 <div className="flex items-center justify-between pl-1 pr-2">
                     <ModelToggle
@@ -771,6 +777,7 @@ export function TRChatPanel({
     initialChatId,
     onChatIdChange,
 }: Props) {
+    const isMobile = useIsMobile();
     const { profile, updateModelPreference } = useUserProfile();
     const apiKeys = profile?.apiKeys;
     const currentModel = profile?.tabularModel ?? "gemini-3-flash-preview";
@@ -1751,10 +1758,12 @@ export function TRChatPanel({
 
     return (
         <div
-            style={{ width: panelWidth }}
+            style={{ width: isMobile ? "100%" : panelWidth }}
             className={cn(
-                "shrink-0 flex flex-col border-r border-gray-200 h-full relative",
+                "shrink-0 flex flex-col h-full relative",
                 "bg-transparent",
+                "max-md:fixed max-md:inset-0 max-md:z-40 max-md:border-0 max-md:bg-gray-50",
+                "md:border-r md:border-gray-200",
             )}
         >
             {/* Resize handle */}
@@ -1763,7 +1772,7 @@ export function TRChatPanel({
                     e.preventDefault();
                     setIsResizing(true);
                 }}
-                className={`absolute top-0 right-0 h-full w-1 cursor-col-resize z-20 transition-colors ${
+                className={`absolute top-0 right-0 hidden h-full w-1 cursor-col-resize z-20 transition-colors md:block ${
                     isResizing
                         ? "bg-burgundy-500"
                         : "bg-transparent hover:bg-burgundy-500"

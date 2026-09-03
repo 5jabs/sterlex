@@ -118,7 +118,7 @@ export function PageHeader({
             className={cn(
                 "flex items-center justify-between",
                 "px-4 md:px-10",
-                "min-h-[76px] pb-4 pt-5.5",
+                "min-h-14 pb-3 pt-3 md:min-h-[76px] md:pb-4 md:pt-5.5",
                 shrink && "shrink-0",
                 className,
             )}
@@ -370,7 +370,7 @@ function PageHeaderSearchActionControl({
                             className:
                                 "cursor-text justify-start gap-2 px-3 text-gray-700 hover:text-gray-700",
                         }),
-                        "w-56 bg-gray-100 sm:w-80",
+                        "w-40 bg-gray-100 sm:w-56 md:w-80",
                     )}
                 >
                     <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -463,7 +463,7 @@ function PageHeaderBreadcrumbs({ items }: { items: PageHeaderBreadcrumb[] }) {
         .find((item) => item.onClick);
 
     return (
-        <div className="flex min-w-0 items-center gap-1.5 text-2xl font-medium font-serif">
+        <div className="flex min-w-0 items-center gap-1.5 text-xl font-medium font-serif md:text-2xl">
             {parent?.onClick && (
                 <button
                     onClick={parent.onClick}

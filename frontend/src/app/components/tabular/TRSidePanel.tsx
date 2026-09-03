@@ -24,6 +24,7 @@ import { PdfView } from "../shared/views/PdfView";
 import { SpreadsheetView } from "../shared/views/SpreadsheetView";
 import { DocxView } from "../shared/views/DocxView";
 import { cn } from "@/app/lib/utils";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 function isDocxDocument(d: {
     file_type?: string | null;
@@ -85,6 +86,10 @@ export function TRSidePanel({
     const [quoteExpanded, setQuoteExpanded] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
     const quoteParagraphRef = useRef<HTMLParagraphElement>(null);
+    const isMobile = useIsMobile();
+    const [mobilePane, setMobilePane] = useState<"document" | "details">(
+        "details",
+    );
 
     // Internal state — initialised from props, also toggled by badge clicks inside the panel
     const [docCitation, setDocCitation] = useState<
@@ -103,6 +108,9 @@ export function TRSidePanel({
                 : undefined,
         );
         setQuoteExpanded(false);
+        setMobilePane(
+            displayDocument && citationQuote ? "document" : "details",
+        );
     }, [cell.id, displayDocument, citationQuote, citationPage]);
 
     useEffect(() => {
@@ -116,16 +124,62 @@ export function TRSidePanel({
     const { processed: reasoningText, citations: reasoningCitations } =
         preprocessCitations(cell.content?.reasoning ?? "");
 
+    const showDocumentPane = docCitation !== undefined;
+    const showDocumentOnMobile =
+        !isMobile || !showDocumentPane || mobilePane === "document";
+    const showDetailsOnMobile =
+        !isMobile || !showDocumentPane || mobilePane === "details";
+
+    function openCitation(citation: { quote: string; page: number }) {
+        setDocCitation(citation);
+        setMobilePane("document");
+    }
+
+    const mobilePaneToggle = showDocumentPane ? (
+        <div className="flex h-7 items-center rounded-full bg-gray-200/70 p-0.5 md:hidden">
+            <button
+                type="button"
+                onClick={() => setMobilePane("document")}
+                className={cn(
+                    "h-6 rounded-full px-2 text-[11px] font-medium transition-colors",
+                    mobilePane === "document"
+                        ? "bg-white text-gray-900 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+                        : "text-gray-500 hover:text-gray-800",
+                )}
+            >
+                Document
+            </button>
+            <button
+                type="button"
+                onClick={() => setMobilePane("details")}
+                className={cn(
+                    "h-6 rounded-full px-2 text-[11px] font-medium transition-colors",
+                    mobilePane === "details"
+                        ? "bg-white text-gray-900 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+                        : "text-gray-500 hover:text-gray-800",
+                )}
+            >
+                Analysis
+            </button>
+        </div>
+    ) : null;
+
     return (
         <div
             className={cn(
                 "fixed z-100 flex flex-row",
-                "right-3 top-3 bottom-3 overflow-hidden rounded-2xl border border-white/70 bg-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl",
+                "inset-3 md:inset-auto md:right-3 md:top-3 md:bottom-3 overflow-hidden rounded-2xl border border-white/70 bg-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl",
             )}
         >
-            {/* Document panel — left, 600px */}
-            {docCitation !== undefined && (
-                <div className="relative flex w-[600px] shrink-0 flex-col border-r border-white/30 px-3 pb-3">
+            {/* Document panel — left, 600px on desktop; full overlay pane on mobile */}
+            {showDocumentPane && (
+                <div
+                    className={cn(
+                        "relative min-h-0 min-w-0 flex-col border-r border-white/30 px-3 pb-3",
+                        "w-full md:w-[600px] md:shrink-0",
+                        showDocumentOnMobile ? "flex" : "hidden md:flex",
+                    )}
+                >
                     {/* Doc header */}
                     <div className="flex items-center gap-2 pt-3 shrink-0 border-b border-white/30">
                         <p
@@ -134,6 +188,7 @@ export function TRSidePanel({
                         >
                             {doc.filename}
                         </p>
+                        {mobilePaneToggle}
                         <button
                             onClick={() => setDocCitation(undefined)}
                             className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/40 hover:text-slate-600"
@@ -190,8 +245,14 @@ export function TRSidePanel({
                 </div>
             )}
 
-            {/* Info column — right, 300px fixed */}
-            <div className="flex w-[300px] shrink-0 flex-col overflow-hidden">
+            {/* Info column — right, 300px fixed on desktop */}
+            <div
+                className={cn(
+                    "min-h-0 min-w-0 flex-col overflow-hidden",
+                    "w-full md:w-[300px] md:shrink-0",
+                    showDetailsOnMobile ? "flex" : "hidden md:flex",
+                )}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-end gap-3 px-5 pt-3 pb-1 shrink-0 border-b border-white/30">
                     <div className="flex items-center gap-1 mr-auto">
@@ -219,6 +280,7 @@ export function TRSidePanel({
                             <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
+                    {mobilePaneToggle}
                     {onRegenerate && (
                         <button
                             onClick={async () => {
@@ -285,7 +347,7 @@ export function TRSidePanel({
                             <div className="text-xs leading-relaxed text-slate-600">
                                 <MarkdownContent
                                     citations={summaryCitations}
-                                    onCitationClick={setDocCitation}
+                                    onCitationClick={openCitation}
                                     column={column}
                                 >
                                     {summaryText || "—"}
@@ -302,7 +364,7 @@ export function TRSidePanel({
                                 <div className="text-xs leading-relaxed text-slate-600">
                                     <MarkdownContent
                                         citations={reasoningCitations}
-                                        onCitationClick={setDocCitation}
+                                        onCitationClick={openCitation}
                                         citationOffset={summaryCitations.length}
                                         column={column}
                                         inline

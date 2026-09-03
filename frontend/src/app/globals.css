@@ -135,12 +135,25 @@
         @apply border-border outline-ring/50;
     }
 
+    html {
+        overflow-x: clip;
+    }
+
     body {
         @apply bg-background text-foreground;
+        overflow-x: clip;
+        -webkit-text-size-adjust: 100%;
     }
 
     button {
         cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    input,
+    textarea,
+    select {
+        font-size: 1rem;
     }
 }
 

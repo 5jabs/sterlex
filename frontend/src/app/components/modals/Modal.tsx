@@ -63,14 +63,14 @@ export function Modal({
     return createPortal(
         <div
             className={cn(
-                "fixed inset-0 z-[200] flex items-center justify-center px-4",
+                "fixed inset-0 z-[200] flex items-end justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:px-4 sm:py-6",
                 "bg-white/10 backdrop-blur-[2px]",
             )}
             onClick={onClose}
         >
             <div
                 className={cn(
-                    "w-full rounded-3xl flex h-[600px] flex-col",
+                    "flex h-[min(600px,calc(100dvh-1.5rem))] max-h-[calc(100dvh-1.5rem)] w-full flex-col rounded-t-3xl sm:rounded-3xl",
                     sizeClassName[size],
                     "border border-white/70 bg-gray-50/95 shadow-[0_14px_40px_rgba(15,23,42,0.101),0_5px_14px_rgba(15,23,42,0.067)] backdrop-blur-3xl",
                     className,
@@ -121,7 +121,7 @@ export function Modal({
                 {hasFooter && (
                     <div
                         className={cn(
-                            "flex items-center gap-3 p-3",
+                            "flex flex-wrap items-center gap-2 p-3 sm:gap-3",
                             secondaryAction
                                 ? "justify-between"
                                 : "justify-end",

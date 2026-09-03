@@ -60,13 +60,13 @@ export default function AccountLayout({
 
     return (
         <div className="flex h-full flex-col overflow-y-auto">
-            <header className="mx-auto flex h-16 w-full max-w-5xl shrink-0 items-end px-6 pb-2 md:h-24 md:pb-4">
-                <h1 className="text-4xl font-medium font-serif">
+            <header className="mx-auto flex h-14 w-full max-w-5xl shrink-0 items-end px-4 pb-2 md:h-24 md:px-6 md:pb-4">
+                <h1 className="font-serif text-3xl font-medium md:text-4xl">
                     Settings
                 </h1>
             </header>
 
-            <main className="mx-auto w-full max-w-5xl flex-1 px-6 pb-10 pt-4 md:pt-6">
+            <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-4 md:px-6 md:pt-6">
                 <div className="grid grid-cols-1 gap-y-6 md:grid-cols-[224px_minmax(0,1fr)] md:gap-x-10">
                     <nav
                         aria-label="Settings"
