@@ -126,7 +126,7 @@ export default function SterlexLayout({
                                     </button>
                                     <div
                                         ref={handleMobileActionsContainerRef}
-                                        className="ml-auto flex min-w-0 flex-1 items-center justify-end"
+                                        className="ml-auto flex min-w-0 flex-1 items-center justify-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                                     />
                                 </div>
                                 <main className="flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain md:overflow-hidden">

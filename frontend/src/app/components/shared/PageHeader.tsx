@@ -116,7 +116,7 @@ export function PageHeader({
     return (
         <div
             className={cn(
-                "flex items-center justify-between",
+                "flex min-w-0 items-center justify-between",
                 "px-4 md:px-10",
                 "min-h-14 pb-3 pt-3 md:min-h-[76px] md:pb-4 md:pt-5.5",
                 shrink && "shrink-0",
@@ -135,7 +135,7 @@ export function PageHeader({
             {hasActions &&
                 mobileActionsContainer &&
                 createPortal(
-                    <div className="flex min-w-0 items-center justify-end gap-3 overflow-visible py-2 -my-2">
+                    <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto py-2 -my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         <PageHeaderActionGroups
                             groupedActionItems={groupedActionItems}
                             actionsDisabled={actionsDisabled}
