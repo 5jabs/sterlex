@@ -1,0 +1,16 @@
+{
+  "_warning": "DEV ONLY. This MCP server is hardcoded to the sterlex-dev Supabase project (ref: wkpmxvgxlhokrwmmbyrc). Never change --project-ref to point this at production. The access token is never stored here, it is read from the SUPABASE_ACCESS_TOKEN environment variable (see .env, which is gitignored).",
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=wkpmxvgxlhokrwmmbyrc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      }
+    }
+  }
+}
