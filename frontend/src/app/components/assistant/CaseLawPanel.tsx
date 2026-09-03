@@ -392,8 +392,8 @@ export function CaseLawPanel({
                             title="Download PDF"
                             className={`inline-flex min-w-0 shrink items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50 ${
                                 compactActions
-                                    ? "h-8 w-8 p-0"
-                                    : "gap-1.5 px-2.5 py-1.5"
+                                    ? "h-11 w-11 p-0 md:h-8 md:w-8"
+                                    : "min-h-11 gap-1.5 px-2.5 py-1.5 md:min-h-0"
                             }`}
                         >
                             <span
@@ -415,8 +415,8 @@ export function CaseLawPanel({
                             title="Open in CourtListener"
                             className={`inline-flex min-w-0 shrink items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-700 hover:bg-gray-50 ${
                                 compactActions
-                                    ? "h-8 w-8 p-0"
-                                    : "gap-1.5 px-2.5 py-1.5"
+                                    ? "h-11 w-11 p-0 md:h-8 md:w-8"
+                                    : "min-h-11 gap-1.5 px-2.5 py-1.5 md:min-h-0"
                             }`}
                         >
                             <span
