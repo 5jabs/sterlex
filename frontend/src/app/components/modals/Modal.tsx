@@ -104,7 +104,7 @@ export function Modal({
                         </div>
                         <button
                             onClick={onClose}
-                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/55 text-gray-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(255,255,255,0.55),0_6px_18px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-colors hover:bg-white/75 hover:text-gray-700"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/55 text-gray-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(255,255,255,0.55),0_6px_18px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-colors hover:bg-white/75 hover:text-gray-700 md:h-7 md:w-7"
                             aria-label="Close"
                         >
                             <X className="h-3.5 w-3.5" />
@@ -177,7 +177,7 @@ function ModalActionButton({
         return (
             <button
                 type="button"
-                className="px-2 py-1.5 text-sm text-gray-500 transition-colors hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 px-3 py-1.5 text-sm text-gray-500 transition-colors hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 md:min-h-0 md:px-2"
                 {...props}
             >
                 {label}
