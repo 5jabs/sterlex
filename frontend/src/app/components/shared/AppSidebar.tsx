@@ -21,6 +21,7 @@ import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
 import { listProjects } from "@/app/lib/sterlexApi";
 import type { Project } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
+import { isMobileViewport } from "@/app/hooks/useIsMobile";
 
 const NAV_ITEMS = [
     { href: "/assistant", label: "Assistant", icon: MessageSquare },
@@ -94,6 +95,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             });
     }, [user]);
 
+    const closeIfMobile = () => {
+        if (isMobileViewport() && isOpen) {
+            onToggle();
+        }
+    };
+
     const handleToggle = () => {
         if (isOpen) setShouldAnimate(true);
         onToggle();
@@ -161,6 +168,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                         <div className="px-2">
                             <Link
                                 href="/assistant"
+                                onClick={closeIfMobile}
                                 className="flex items-center hover:opacity-80 transition-opacity"
                             >
                                 <span
@@ -197,7 +205,10 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                     return (
                         <div key={href} className="py-1 px-3">
                             <button
-                                onClick={() => router.push(href)}
+                                onClick={() => {
+                                    router.push(href);
+                                    closeIfMobile();
+                                }}
                                 title={!isOpen ? label : ""}
                                 className={cn(
                                     "w-full h-10 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
@@ -293,11 +304,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                                 return (
                                                     <button
                                                         key={project.id}
-                                                        onClick={() =>
+                                                        onClick={() => {
                                                             router.push(
                                                                 `/projects/${project.id}`,
-                                                            )
-                                                        }
+                                                            );
+                                                            closeIfMobile();
+                                                        }}
                                                         title={project.name}
                                                         className={cn(
                                                             "flex h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs transition-colors",
@@ -406,6 +418,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                                                 ? `/projects/${chat.project_id}/assistant/chat/${chat.id}`
                                                                 : `/assistant/chat/${chat.id}`,
                                                         );
+                                                        closeIfMobile();
                                                     }}
                                                 />
                                             ))}
@@ -484,6 +497,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                         onClick={() => {
                                             router.push("/account");
                                             setIsDropdownOpen(false);
+                                            closeIfMobile();
                                         }}
                                         className={cn(
                                             "w-full px-4 py-2 text-left text-sm text-gray-700 flex items-center gap-2 rounded-md",

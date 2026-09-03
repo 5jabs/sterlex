@@ -24,7 +24,6 @@ import { PdfView } from "../shared/views/PdfView";
 import { SpreadsheetView } from "../shared/views/SpreadsheetView";
 import { DocxView } from "../shared/views/DocxView";
 import { cn } from "@/app/lib/utils";
-import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 function isDocxDocument(d: {
     file_type?: string | null;
@@ -86,7 +85,6 @@ export function TRSidePanel({
     const [quoteExpanded, setQuoteExpanded] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
     const quoteParagraphRef = useRef<HTMLParagraphElement>(null);
-    const isMobile = useIsMobile();
     const [mobilePane, setMobilePane] = useState<"document" | "details">(
         "details",
     );
@@ -126,9 +124,8 @@ export function TRSidePanel({
 
     const showDocumentPane = docCitation !== undefined;
     const showDocumentOnMobile =
-        !isMobile || !showDocumentPane || mobilePane === "document";
-    const showDetailsOnMobile =
-        !isMobile || !showDocumentPane || mobilePane === "details";
+        !showDocumentPane || mobilePane === "document";
+    const showDetailsOnMobile = !showDocumentPane || mobilePane === "details";
 
     function openCitation(citation: { quote: string; page: number }) {
         setDocCitation(citation);
@@ -177,7 +174,8 @@ export function TRSidePanel({
                     className={cn(
                         "relative min-h-0 min-w-0 flex-col border-r border-white/30 px-3 pb-3",
                         "w-full md:w-[600px] md:shrink-0",
-                        showDocumentOnMobile ? "flex" : "hidden md:flex",
+                        showDocumentOnMobile ? "flex" : "hidden",
+                        "md:flex",
                     )}
                 >
                     {/* Doc header */}
@@ -250,7 +248,8 @@ export function TRSidePanel({
                 className={cn(
                     "min-h-0 min-w-0 flex-col overflow-hidden",
                     "w-full md:w-[300px] md:shrink-0",
-                    showDetailsOnMobile ? "flex" : "hidden md:flex",
+                    showDetailsOnMobile ? "flex" : "hidden",
+                    "md:flex",
                 )}
             >
                 {/* Header */}

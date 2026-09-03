@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -35,7 +35,6 @@ import {
 } from "@/app/lib/modelAvailability";
 import type { ApiKeyState } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
-import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -777,7 +776,6 @@ export function TRChatPanel({
     initialChatId,
     onChatIdChange,
 }: Props) {
-    const isMobile = useIsMobile();
     const { profile, updateModelPreference } = useUserProfile();
     const apiKeys = profile?.apiKeys;
     const currentModel = profile?.tabularModel ?? "gemini-3-flash-preview";
@@ -1758,9 +1756,13 @@ export function TRChatPanel({
 
     return (
         <div
-            style={{ width: isMobile ? "100%" : panelWidth }}
+            style={
+                {
+                    "--tr-chat-panel-width": `${panelWidth}px`,
+                } as CSSProperties
+            }
             className={cn(
-                "shrink-0 flex flex-col h-full relative",
+                "relative flex h-full w-full shrink-0 flex-col md:w-[var(--tr-chat-panel-width)]",
                 "bg-transparent",
                 "max-md:fixed max-md:inset-0 max-md:z-40 max-md:border-0 max-md:bg-gray-50",
                 "md:border-r md:border-gray-200",

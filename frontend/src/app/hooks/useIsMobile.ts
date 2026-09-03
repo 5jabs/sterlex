@@ -11,13 +11,13 @@ export function isMobileViewport(
 }
 
 export function useIsMobile(breakpoint: number = MOBILE_BREAKPOINT_PX) {
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => isMobileViewport(breakpoint));
 
     useEffect(() => {
-        const update = () => setIsMobile(window.innerWidth < breakpoint);
-        update();
-        window.addEventListener("resize", update);
-        return () => window.removeEventListener("resize", update);
+        const media = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+        const update = () => setIsMobile(media.matches);
+        media.addEventListener("change", update);
+        return () => media.removeEventListener("change", update);
     }, [breakpoint]);
 
     return isMobile;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PanelLeft } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { ChatHistoryProvider } from "@/app/contexts/ChatHistoryContext";
@@ -16,7 +16,6 @@ export default function SterlexLayout({
 }) {
     const { isAuthenticated, authLoading } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
     const [hasMounted, setHasMounted] = useState(false);
 
     useEffect(() => {
@@ -57,12 +56,6 @@ export default function SterlexLayout({
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, [isSidebarOpen, isSidebarOpenDesktop]);
-
-    useEffect(() => {
-        if (typeof window !== "undefined" && window.innerWidth < 768) {
-            setIsSidebarOpen(false);
-        }
-    }, [pathname]);
 
     const handleSidebarToggle = () => {
         if (window.innerWidth >= 768) {
