@@ -1948,7 +1948,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
         ) : null;
 
     const toolbarActions = (
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2 md:gap-5">
             {actionsDropdown}
             <button
                 onClick={() => {
@@ -2133,7 +2133,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
             />
             {/* Table content */}
             <ProjectSectionToolbar actions={toolbarActions} />
-            <div className="w-full flex-1 min-h-0 overflow-auto">
+            <div className="w-full min-h-0 flex-1 overflow-auto max-md:[&_.w-24]:hidden max-md:[&_.w-32]:hidden">
                 <div className="min-w-max flex min-h-full flex-col">
                     {loading ? (
                         <ProjectTableLoading stickyCellBg={stickyCellBg} />
