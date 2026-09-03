@@ -565,28 +565,28 @@ export function PdfView({
             {numPages > 0 && (
                 <>
                     {/* Page counter — bottom left */}
-                    <div className="absolute bottom-4 left-4 pointer-events-none">
+                    <div className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 md:bottom-4 md:left-4">
                         <span className="flex items-center px-3 py-1.5 rounded-full text-xs font-medium tabular-nums text-gray-700 bg-white/25 backdrop-blur-md border border-white/30 shadow-md">
                             {currentPage}/{numPages}
                         </span>
                     </div>
 
                     {/* Zoom controls — bottom right */}
-                    <div className="absolute bottom-4 right-4 flex items-center gap-px rounded-full bg-white/25 backdrop-blur-md border border-white/30 shadow-md px-1 py-1">
+                    <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 flex items-center gap-px rounded-full border border-white/30 bg-white/25 px-1 py-1 shadow-md backdrop-blur-md md:bottom-4 md:right-4">
                         <button
                             onClick={handleZoomOut}
                             disabled={zoom <= ZOOM_MIN}
-                            className="flex items-center justify-center w-7 h-7 rounded-full text-gray-600 hover:bg-white/80 disabled:opacity-30 transition-colors"
+                            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-white/80 disabled:opacity-30 md:h-7 md:w-7"
                         >
                             <ZoomOut className="h-3.5 w-3.5" />
                         </button>
-                        <span className="text-xs font-medium text-gray-600 tabular-nums w-9 text-center select-none">
+                        <span className="w-9 select-none text-center text-xs font-medium tabular-nums text-gray-600">
                             {Math.round(zoom * 100)}%
                         </span>
                         <button
                             onClick={handleZoomIn}
                             disabled={zoom >= ZOOM_MAX}
-                            className="flex items-center justify-center w-7 h-7 rounded-full text-gray-600 hover:bg-white/80 disabled:opacity-30 transition-colors"
+                            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-white/80 disabled:opacity-30 md:h-7 md:w-7"
                         >
                             <ZoomIn className="h-3.5 w-3.5" />
                         </button>

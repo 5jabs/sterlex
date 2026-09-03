@@ -219,7 +219,7 @@ export function AssistantSidePanel({
                     "bg-gray-200/80",
                 )}
             >
-                <div className="flex-1 flex items-end gap-1 overflow-hidden px-2">
+                <div className="flex flex-1 items-end gap-1 overflow-x-auto px-2">
                     {tabs.map((tab) => {
                         const isActive = tab.id === active.id;
                         const showVersionBadge =

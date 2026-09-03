@@ -639,7 +639,7 @@ export function ChatView({
                     style={{ scrollbarGutter: "stable both-edges" }}
                 >
                     <div
-                        className="w-full max-w-4xl mx-auto px-6 pt-6 md:px-8 md:pt-8 min-h-full flex flex-col relative"
+                        className="w-full max-w-4xl mx-auto px-4 pt-4 md:px-8 md:pt-8 min-h-full flex flex-col relative"
                         style={{ paddingBottom: messagesBottomPadding }}
                     >
                         {!messagesVisible && (
@@ -776,7 +776,12 @@ export function ChatView({
                 )}
 
                 {/* Chat input */}
-                <div className="absolute bottom-3 left-0 right-0 w-full z-30">
+                <div
+                    className="absolute left-0 right-0 z-30"
+                    style={{
+                        bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+                    }}
+                >
                     <div className="pointer-events-none absolute -bottom-3 left-0 right-0 z-0">
                         <div className="mx-auto h-7 w-full max-w-4xl px-4 md:px-6">
                             <div className="h-full rounded-t-[20px] bg-white/50 backdrop-blur-[1px]" />

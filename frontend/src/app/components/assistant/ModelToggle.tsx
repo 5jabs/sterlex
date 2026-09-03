@@ -77,7 +77,7 @@ export function ModelToggle({ value, onChange, apiKeys }: Props) {
                     {!selectedAvailable && (
                         <AlertCircle className="h-3 w-3 shrink-0 text-red-500" />
                     )}
-                    <span className="max-w-[140px] truncate">{selectedLabel}</span>
+                    <span className="max-w-[6.5rem] truncate sm:max-w-[140px]">{selectedLabel}</span>
                     <ChevronDown
                         className={`h-3 w-3 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                     />

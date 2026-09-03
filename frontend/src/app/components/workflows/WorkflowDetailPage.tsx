@@ -68,8 +68,8 @@ type SaveStatus = "idle" | "saving" | "saved";
 type DeleteStatus = "idle" | "loading" | "complete";
 type WorkflowShare = Awaited<ReturnType<typeof listWorkflowShares>>[number];
 
-const NAME_COL_W = "w-[332px] shrink-0";
-const CHECKBOX_GUTTER = "h-2.5 w-2.5 shrink-0";
+const NAME_COL_W = "w-[220px] md:w-[332px] shrink-0";
+const CHECKBOX_GUTTER = "h-4 w-4 shrink-0 md:h-2.5 md:w-2.5";
 const WORKFLOW_CONTRIBUTIONS_ENABLED =
     process.env.NEXT_PUBLIC_WORKFLOW_CONTRIBUTIONS_ENABLED === "true";
 
@@ -620,8 +620,8 @@ export function WorkflowDetailPage({ id, workflowType }: Props) {
                                 )}
                                 <span>Column Title</span>
                             </div>
-                            <div className="ml-auto w-36 shrink-0">Format</div>
-                            <div className="flex-1 min-w-0">Prompt</div>
+                            <div className="ml-auto w-36 shrink-0 max-md:hidden">Format</div>
+                            <div className="min-w-0 flex-1 max-md:hidden">Prompt</div>
                             {!readOnly && <div className="w-8 shrink-0" />}
                         </div>
 
@@ -669,7 +669,7 @@ export function WorkflowDetailPage({ id, workflowType }: Props) {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="ml-auto w-36 shrink-0">
+                                            <div className="ml-auto w-36 shrink-0 max-md:hidden">
                                                 <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
                                                     <FormatIcon
                                                         className={`h-3.5 w-3.5 ${formatIconClassName(col.format ?? "text")}`}
@@ -677,7 +677,7 @@ export function WorkflowDetailPage({ id, workflowType }: Props) {
                                                     {formatLabel(col.format ?? "text")}
                                                 </span>
                                             </div>
-                                            <div className="flex-1 min-w-0 pr-4">
+                                            <div className="min-w-0 flex-1 pr-4 max-md:hidden">
                                                 <span className="text-xs text-gray-500 truncate block">
                                                     {col.prompt}
                                                 </span>
@@ -856,10 +856,10 @@ function TabularWorkflowEditorSkeleton() {
                     />
                     <div className="h-2.5 w-20 animate-pulse rounded bg-gray-100" />
                 </div>
-                <div className="w-36 shrink-0">
+                <div className="w-36 shrink-0 max-md:hidden">
                     <div className="h-2.5 w-14 animate-pulse rounded bg-gray-100" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 max-md:hidden">
                     <div className="h-2.5 w-12 animate-pulse rounded bg-gray-100" />
                 </div>
                 <div className="w-8 shrink-0" />
@@ -882,10 +882,10 @@ function TabularWorkflowEditorSkeleton() {
                                 style={{ width: `${40 + (i * 13) % 35}%` }}
                             />
                         </div>
-                        <div className="w-36 shrink-0">
+                        <div className="w-36 shrink-0 max-md:hidden">
                             <div className="h-3 w-16 animate-pulse rounded bg-gray-100" />
                         </div>
-                        <div className="flex-1 pr-4">
+                        <div className="flex-1 pr-4 max-md:hidden">
                             <div
                                 className="h-3 animate-pulse rounded bg-gray-100"
                                 style={{ width: `${50 + (i * 17) % 35}%` }}

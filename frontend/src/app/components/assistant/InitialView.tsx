@@ -14,9 +14,9 @@ export function InitialView({ onSubmit }: InitialViewProps) {
     const [projectModalOpen, setProjectModalOpen] = useState(false);
 
     return (
-        <div className="flex flex-col h-full w-full px-6">
-            <div className="flex justify-center pt-[10vh] md:pt-[14vh]">
-                <SiteLogo size="xl" />
+        <div className="flex h-full w-full min-w-0 flex-col px-4 md:px-6">
+            <div className="flex justify-center pt-[6vh] md:pt-[14vh]">
+                <SiteLogo size="xl" className="text-4xl md:text-6xl" />
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center">

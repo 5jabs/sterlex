@@ -116,9 +116,9 @@ export function PageHeader({
     return (
         <div
             className={cn(
-                "flex items-center justify-between",
+                "flex min-w-0 items-center justify-between",
                 "px-4 md:px-10",
-                "min-h-[76px] pb-4 pt-5.5",
+                "min-h-14 pb-3 pt-3 md:min-h-[76px] md:pb-4 md:pt-5.5",
                 shrink && "shrink-0",
                 className,
             )}
@@ -135,7 +135,7 @@ export function PageHeader({
             {hasActions &&
                 mobileActionsContainer &&
                 createPortal(
-                    <div className="flex min-w-0 items-center justify-end gap-3 overflow-visible py-2 -my-2">
+                    <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto py-2 -my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         <PageHeaderActionGroups
                             groupedActionItems={groupedActionItems}
                             actionsDisabled={actionsDisabled}
@@ -370,7 +370,7 @@ function PageHeaderSearchActionControl({
                             className:
                                 "cursor-text justify-start gap-2 px-3 text-gray-700 hover:text-gray-700",
                         }),
-                        "w-56 bg-gray-100 sm:w-80",
+                        "w-40 bg-gray-100 sm:w-56 md:w-80",
                     )}
                 >
                     <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -421,10 +421,10 @@ function pageHeaderActionControlClassName({
     className,
 }: PageHeaderActionControlClassNameOptions = {}) {
     return cn(
-        "flex h-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-gray-100 active:bg-gray-100 disabled:cursor-default disabled:text-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-300",
+        "flex h-9 items-center justify-center rounded-full text-sm transition-colors hover:bg-gray-100 active:bg-gray-100 disabled:cursor-default disabled:text-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-300 md:h-7",
         iconOnly
-            ? "w-7"
-            : "w-7 gap-1.5 px-0 sm:w-auto sm:px-3",
+            ? "w-9 md:w-7"
+            : "w-9 gap-1.5 px-0 sm:w-auto sm:px-3 md:w-7",
         disabled ? "cursor-default" : "cursor-pointer",
         "hover:bg-gray-100 active:bg-gray-100",
         variant === "danger"
@@ -463,7 +463,7 @@ function PageHeaderBreadcrumbs({ items }: { items: PageHeaderBreadcrumb[] }) {
         .find((item) => item.onClick);
 
     return (
-        <div className="flex min-w-0 items-center gap-1.5 text-2xl font-medium font-serif">
+        <div className="flex min-w-0 items-center gap-1.5 text-xl font-medium font-serif md:text-2xl">
             {parent?.onClick && (
                 <button
                     onClick={parent.onClick}

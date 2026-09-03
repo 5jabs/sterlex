@@ -836,7 +836,7 @@ export function TRView({ reviewId, projectId }: Props) {
                     active="table"
                     onChange={() => undefined}
                     actions={
-                        <div className="ml-auto flex items-center gap-5">
+                        <div className="ml-auto flex items-center gap-3 md:gap-5">
                             {loading ? (
                                 <>
                                     <div className="h-3 w-24 rounded bg-gray-100 animate-pulse" />
@@ -849,7 +849,7 @@ export function TRView({ reviewId, projectId }: Props) {
                                         onClick={() =>
                                             setActionsOpen((v) => !v)
                                         }
-                                        className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                                        className="flex min-h-9 items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors md:min-h-0"
                                     >
                                         Actions
                                         <ChevronDown className="h-3.5 w-3.5" />
@@ -858,13 +858,13 @@ export function TRView({ reviewId, projectId }: Props) {
                                         <div className="absolute top-full right-0 mt-1 w-36 rounded-lg border border-gray-100 bg-white shadow-lg z-50 overflow-hidden">
                                             <button
                                                 onClick={handleClearResults}
-                                                className="w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                                className="w-full px-3 py-2.5 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors md:py-1.5"
                                             >
                                                 Clear results
                                             </button>
                                             <button
                                                 onClick={handleDeleteDocuments}
-                                                className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                                className="w-full px-3 py-2.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors md:py-1.5"
                                             >
                                                 Delete
                                             </button>
@@ -877,7 +877,7 @@ export function TRView({ reviewId, projectId }: Props) {
                                     <button
                                         onClick={() => setAddDocsOpen(true)}
                                         disabled={savingColumnsConfig}
-                                        className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                                        className={`flex min-h-9 items-center gap-1 text-xs font-medium transition-colors md:min-h-0 ${
                                             savingColumnsConfig
                                                 ? "text-gray-300 cursor-default"
                                                 : "text-gray-700 hover:text-gray-900"
@@ -891,7 +891,7 @@ export function TRView({ reviewId, projectId }: Props) {
                                         disabled={
                                             savingColumn || savingColumnsConfig
                                         }
-                                        className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                                        className={`flex min-h-9 items-center gap-1 text-xs font-medium transition-colors md:min-h-0 ${
                                             savingColumn || savingColumnsConfig
                                                 ? "text-gray-300 cursor-default"
                                                 : "text-gray-700 hover:text-gray-900"

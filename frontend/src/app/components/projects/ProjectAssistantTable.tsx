@@ -96,7 +96,7 @@ export function ProjectAssistantTable({
                         <span>Chats</span>
                     </TableStickyCell>
                     <TableHeaderCell className="ml-auto w-32">Creator</TableHeaderCell>
-                    <TableHeaderCell className="w-32">Created</TableHeaderCell>
+                    <TableHeaderCell className="w-32 max-md:hidden">Created</TableHeaderCell>
                     <TableHeaderCell className="w-8" />
                 </TableHeaderRow>
             }
@@ -177,7 +177,7 @@ export function ProjectAssistantTable({
                             <TableCell className="ml-auto w-32">
                                 {creatorLabel(chat, currentUserId)}
                             </TableCell>
-                            <TableCell className="w-32">
+                            <TableCell className="w-32 max-md:hidden">
                                 {formatDate(chat.created_at)}
                             </TableCell>
                             <div
@@ -232,7 +232,7 @@ function ProjectAssistantLoadingRows() {
                     <TableCell className="ml-auto w-32">
                         <SkeletonLine className="w-16" />
                     </TableCell>
-                    <TableCell className="w-32">
+                    <TableCell className="w-32 max-md:hidden">
                         <SkeletonLine className="w-16" />
                     </TableCell>
                     <TableCell className="w-8" />

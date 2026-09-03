@@ -394,15 +394,15 @@ export function WorkflowList() {
                                 {typeFilterButton}
                             </div>
                         </TableHeaderCell>
-                        <TableHeaderCell className="w-40">
+                        <TableHeaderCell className="w-40 max-md:hidden">
                             <div className="flex items-center gap-1">
                                 <span>Practice</span>
                                 {practiceFilterButton}
                             </div>
                         </TableHeaderCell>
-                        <TableHeaderCell className="w-40">Jurisdiction</TableHeaderCell>
-                        <TableHeaderCell className="w-28">Language</TableHeaderCell>
-                        <TableHeaderCell className="w-44">Source</TableHeaderCell>
+                        <TableHeaderCell className="w-40 max-md:hidden">Jurisdiction</TableHeaderCell>
+                        <TableHeaderCell className="w-28 max-md:hidden">Language</TableHeaderCell>
+                        <TableHeaderCell className="w-44 max-md:hidden">Source</TableHeaderCell>
                         <TableHeaderCell className="w-8" />
                     </TableHeaderRow>
                 }
@@ -426,19 +426,19 @@ export function WorkflowList() {
                                     <TableCell className="ml-auto w-28">
                                         <SkeletonLine className="w-16" />
                                     </TableCell>
-                                    <TableCell className="w-40">
+                                    <TableCell className="w-40 max-md:hidden">
                                         <div className="flex items-center gap-1.5">
                                             <SkeletonDot className="rounded-full" />
                                             <SkeletonLine className="w-24" />
                                         </div>
                                     </TableCell>
-                                    <TableCell className="w-40">
+                                    <TableCell className="w-40 max-md:hidden">
                                         <SkeletonLine className="w-24" />
                                     </TableCell>
-                                    <TableCell className="w-28">
+                                    <TableCell className="w-28 max-md:hidden">
                                         <SkeletonLine className="w-16" />
                                     </TableCell>
-                                    <TableCell className="w-44">
+                                    <TableCell className="w-44 max-md:hidden">
                                         <SkeletonLine className="w-14" />
                                     </TableCell>
                                     <TableCell className="w-8" />
@@ -568,7 +568,7 @@ export function WorkflowList() {
                                         );
                                     })()}
                                 </TableCell>
-                                <TableCell className="w-40">
+                                <TableCell className="w-40 max-md:hidden">
                                     {wf.metadata.practice ? (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
                                             <span
@@ -584,7 +584,7 @@ export function WorkflowList() {
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell className="w-40">
+                                <TableCell className="w-40 max-md:hidden">
                                     {wf.metadata.jurisdictions &&
                                     wf.metadata.jurisdictions.length > 0 ? (
                                         <span className="truncate max-w-full text-xs font-medium text-gray-600">
@@ -596,7 +596,7 @@ export function WorkflowList() {
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell className="w-28">
+                                <TableCell className="w-28 max-md:hidden">
                                     {wf.metadata.language ? (
                                         <span className="text-xs font-medium text-gray-600">
                                             {wf.metadata.language}
@@ -607,7 +607,7 @@ export function WorkflowList() {
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell className="w-44">
+                                <TableCell className="w-44 max-md:hidden">
                                     {wf.is_system ? (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
                                             <SterlexIcon size={14} />

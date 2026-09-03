@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "@/app/lib/utils";
 
 interface SiteLogoProps {
     size?: "sm" | "md" | "lg" | "xl";
@@ -26,9 +27,12 @@ export function SiteLogo({
 
     const logo = (
         <h1
-            className={`font-bitter font-medium text-burgundy-600 ${sizeClasses[size]} ${
-                animate ? "sidebar-fade-in" : ""
-            } ${className}`}
+            className={cn(
+                "font-bitter font-medium text-burgundy-600",
+                sizeClasses[size],
+                animate && "sidebar-fade-in",
+                className,
+            )}
         >
             Sterlex
         </h1>

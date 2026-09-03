@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Bitter, Lora } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/components/providers";
@@ -19,6 +19,13 @@ const lora = Lora({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700"],
 });
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+    themeColor: "#f9fafb",
+};
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://app.sterlex.ai"),

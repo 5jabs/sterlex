@@ -155,10 +155,15 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit();
+        if (e.key !== "Enter" || e.shiftKey) return;
+        if (
+            typeof window !== "undefined" &&
+            window.matchMedia("(pointer: coarse)").matches
+        ) {
+            return;
         }
+        e.preventDefault();
+        handleSubmit();
     };
 
     return (
@@ -226,7 +231,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                             value={value}
                             onChange={handleChange}
                             onKeyDown={handleKeyDown}
-                            className="w-full resize-none text-sm overflow-hidden border-0 text-base p-0 bg-transparent outline-none placeholder:text-gray-400 leading-6 max-h-48"
+                            className="w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-base leading-6 outline-none placeholder:text-gray-400 max-h-48 md:text-sm"
                         />
                     </div>
 
@@ -301,7 +306,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                             <button
                                 type="button"
                                 className={cn(
-                                    "relative bg-gradient-to-b from-neutral-700 to-black text-white rounded-[10px] h-8 w-8 flex items-center justify-center cursor-pointer disabled:cursor-default disabled:from-neutral-600 disabled:to-black backdrop-blur-xl border border-white/30 active:enabled:scale-95 transition-all duration-150",
+                                    "relative bg-gradient-to-b from-neutral-700 to-black text-white rounded-[10px] h-10 w-10 md:h-8 md:w-8 flex items-center justify-center cursor-pointer disabled:cursor-default disabled:from-neutral-600 disabled:to-black backdrop-blur-xl border border-white/30 active:enabled:scale-95 transition-all duration-150",
                                     "shadow-[0_5px_14px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.24)]",
                                 )}
                                 onClick={handleActionClick}

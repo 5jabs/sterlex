@@ -12,7 +12,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { updateUserProfile } from "@/app/lib/sterlexApi";
 
 const authGlassCardClassName =
-    "rounded-2xl border border-white/70 bg-white/72 p-8 shadow-[0_4px_14px_rgba(15,23,42,0.045),inset_0_1px_0_rgba(255,255,255,0.86),inset_0_-8px_18px_rgba(255,255,255,0.12)] backdrop-blur-2xl";
+    "rounded-2xl border border-white/70 bg-white/72 p-6 shadow-[0_4px_14px_rgba(15,23,42,0.045),inset_0_1px_0_rgba(255,255,255,0.86),inset_0_-8px_18px_rgba(255,255,255,0.12)] backdrop-blur-2xl md:p-8";
 const authInputClassName =
     "rounded-lg border border-transparent bg-gray-100 px-3 shadow-none focus-visible:border-gray-200 focus-visible:ring-2 focus-visible:ring-gray-300/45";
 const authToggleClassName =
@@ -102,9 +102,9 @@ export default function SignupPage() {
     // Success View
     if (success) {
         return (
-            <div className="min-h-dvh bg-gray-50/80 flex items-start justify-center px-6 pt-32 md:pt-40 pb-10 relative">
-                <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2">
-                    <SiteLogo size="lg" asLink />
+            <div className="relative flex min-h-dvh items-start justify-center bg-gray-50/80 px-4 pb-10 pt-28 md:px-6 md:pt-40">
+                <div className="absolute left-1/2 top-[max(1rem,env(safe-area-inset-top))] -translate-x-1/2 md:top-8">
+                    <SiteLogo size="lg" className="text-3xl md:text-4xl" asLink />
                 </div>
                 <div className="w-full max-w-md">
                     <div
@@ -127,9 +127,9 @@ export default function SignupPage() {
 
     // Default Signup Form View
     return (
-        <div className="min-h-dvh bg-gray-50/80 flex items-start justify-center px-6 pt-32 md:pt-40 pb-10 relative">
-            <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2">
-                <SiteLogo size="lg" asLink />
+        <div className="relative flex min-h-dvh items-start justify-center bg-gray-50/80 px-4 pb-10 pt-28 md:px-6 md:pt-40">
+            <div className="absolute left-1/2 top-[max(1rem,env(safe-area-inset-top))] -translate-x-1/2 md:top-8">
+                <SiteLogo size="lg" className="text-3xl md:text-4xl" asLink />
             </div>
             <div className="w-full max-w-md">
                 <div className={`${authGlassCardClassName} mb-4`}>

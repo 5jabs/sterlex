@@ -263,7 +263,7 @@ export function FileDirectory({
                                         type="button"
                                         key={doc.id}
                                         onClick={() => toggle(doc.id)}
-                                        className={`w-full rounded-md flex items-center gap-2 px-2 py-2 text-xs transition-all text-left  ${
+                                        className={`w-full rounded-md flex items-center gap-2 px-2 py-2.5 text-xs transition-all text-left min-h-11 ${
                                             selected
                                                 ? "bg-gray-100"
                                                 : "hover:bg-gray-100/70"
@@ -297,7 +297,7 @@ export function FileDirectory({
                                             }
                                         />
                                         {doc.created_at && (
-                                            <span className="shrink-0 text-gray-300">
+                                            <span className="hidden shrink-0 text-gray-300 sm:inline">
                                                 {formatDate(doc.created_at)}
                                             </span>
                                         )}
@@ -328,7 +328,7 @@ export function FileDirectory({
                                         onClick={() =>
                                             toggleFolder(project.id)
                                         }
-                                        className="w-full rounded-md flex items-center gap-2 px-2 py-2 text-xs transition-all text-left hover:bg-gray-100/70"
+                                        className="w-full min-h-11 rounded-md flex items-center gap-2 px-2 py-2.5 text-xs transition-all text-left hover:bg-gray-100/70"
                                     >
                                         {isExpanded ? (
                                             <ChevronDown className="h-3 w-3 text-gray-400 shrink-0" />

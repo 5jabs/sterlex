@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState, type CSSProperties } from "react";
 import { Loader2, Plus, Table2, Upload } from "lucide-react";
 import type {
     ColumnConfig,
@@ -14,17 +14,18 @@ import {
     SkeletonDot,
     SkeletonLine,
 } from "../shared/TablePrimitive";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 const SKELETON_COLS = 4;
 const SKELETON_ROWS = 5;
 
-const COL_W = "w-[300px] shrink-0";
-const DOC_COL_W = "w-[332px] shrink-0";
+const COL_W = "w-[var(--tr-data-col-w)] shrink-0";
+const DOC_COL_W = "w-[var(--tr-doc-col-w)] shrink-0";
 
-// Pixel widths matching the CSS constants above
-const DOC_COL_W_PX = 332;
-const DATA_COL_W_PX = 300;
-const STICKY_LEFT_PX = DOC_COL_W_PX;
+const DOC_COL_W_DESKTOP_PX = 332;
+const DATA_COL_W_DESKTOP_PX = 300;
+const DOC_COL_W_MOBILE_PX = 168;
+const DATA_COL_W_MOBILE_PX = 220;
 
 export interface TRTableHandle {
     scrollToCell: (colIdx: number, rowIdx: number) => void;
@@ -73,6 +74,13 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
     ref,
 ) {
     const stickyCellBg = "bg-[#fafbfc]";
+    const isMobile = useIsMobile();
+    const docColPx = isMobile ? DOC_COL_W_MOBILE_PX : DOC_COL_W_DESKTOP_PX;
+    const dataColPx = isMobile ? DATA_COL_W_MOBILE_PX : DATA_COL_W_DESKTOP_PX;
+    const colVars = {
+        "--tr-doc-col-w": `${docColPx}px`,
+        "--tr-data-col-w": `${dataColPx}px`,
+    } as CSSProperties;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
     const lastScrollLeftRef = useRef(0);
@@ -97,9 +105,9 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
 
     const sortedColumns = [...columns].sort((a, b) => a.index - b.index);
     const totalContentWidth =
-        DOC_COL_W_PX + sortedColumns.length * DATA_COL_W_PX + 32;
+        docColPx + sortedColumns.length * dataColPx + 32;
     const skeletonContentWidth =
-        DOC_COL_W_PX + SKELETON_COLS * DATA_COL_W_PX + 32;
+        docColPx + SKELETON_COLS * dataColPx + 32;
     useImperativeHandle(ref, () => ({
         scrollToCell(colIdx: number, rowIdx: number) {
             const container = scrollContainerRef.current;
@@ -119,13 +127,13 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
 
             // Horizontal: fixed column widths — center the target column in view
             const targetScrollLeft =
-                STICKY_LEFT_PX +
-                colIdx * DATA_COL_W_PX -
+                docColPx +
+                colIdx * dataColPx -
                 container.clientWidth / 2 +
-                DATA_COL_W_PX / 2;
+                dataColPx / 2;
             container.scrollLeft = Math.max(0, targetScrollLeft);
         },
-    }));
+    }), [docColPx, dataColPx]);
 
     function getCell(docId: string, colIdx: number) {
         return cells.find(
@@ -157,7 +165,7 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
 
     if (loading) {
         return (
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden" style={colVars}>
                 {/* Header */}
                 <div className="shrink-0 overflow-hidden">
                     <div
@@ -215,7 +223,7 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
         uploadingFilenames.length === 0
     ) {
         return (
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden" style={colVars}>
                 <div className={`shrink-0 flex items-center border-b border-gray-200 ${stickyCellBg}`}>
                     <div
                         className={`${DOC_COL_W} border-r border-gray-200 py-2 pl-4 pr-2 text-xs font-medium text-gray-500 select-none`}
@@ -228,15 +236,15 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
                     {dragOverFiles && (
                         <div className="absolute inset-0 z-[90] border-2 border-burgundy-400 bg-burgundy-50/40 pointer-events-none" />
                     )}
-                    <div className="flex flex-1 flex-col items-start justify-center w-full max-w-xs mx-auto">
-                        <Table2 className="h-8 w-8 text-gray-300 mb-4" />
-                        <p className="text-2xl font-medium font-serif text-gray-900">
+                    <div className="mx-auto flex w-full max-w-xs flex-col items-start justify-center px-4">
+                        <Table2 className="mb-4 h-8 w-8 text-gray-300" />
+                        <p className="font-serif text-xl font-medium text-gray-900 md:text-2xl">
                             Tabular Review
                         </p>
-                        <p className="mt-1 text-xs text-gray-400 text-left">
+                        <p className="mt-1 text-left text-xs text-gray-400">
                             Add columns and documents to get started.
                         </p>
-                        <div className="mt-4 flex items-center gap-2">
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
                             <button
                                 onClick={onAddColumn}
                                 className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-700 shadow-md"
@@ -258,7 +266,7 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
     }
 
     return (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden" style={colVars}>
             {/* Header */}
             <div ref={headerRef} className="shrink-0 overflow-hidden">
                 <div
@@ -301,7 +309,7 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
                         <button
                             onClick={onAddColumn}
                             disabled={savingColumn || savingColumnsConfig}
-                            className="flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors disabled:text-gray-200"
+                            className="flex h-9 w-9 items-center justify-center text-gray-400 hover:text-gray-700 transition-colors disabled:text-gray-200 md:h-auto md:w-auto"
                         >
                             <Plus className="h-4 w-4" />
                         </button>
@@ -331,7 +339,7 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
                             <input
                                 type="checkbox"
                                 disabled
-                                className="h-2.5 w-2.5 shrink-0 rounded border-gray-200 cursor-default accent-black disabled:opacity-100"
+                                className={`${TABLE_CHECKBOX_CLASS} cursor-default disabled:opacity-100`}
                             />
                             <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
                             <span className="line-clamp-1" title={filename}>
