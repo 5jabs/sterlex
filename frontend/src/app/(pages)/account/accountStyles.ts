@@ -29,7 +29,7 @@ export const accountGlassIconButtonClassName =
 
 export function accountTabButtonClassName(active: boolean) {
     return cn(
-        "flex h-9 w-full items-center rounded-lg px-3 text-left text-sm font-medium whitespace-nowrap transition-colors",
+        "flex h-11 w-auto shrink-0 items-center rounded-lg px-3 text-left text-sm font-medium whitespace-nowrap transition-colors md:h-9 md:w-full",
         active
             ? "bg-gray-100 text-gray-900"
             : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",

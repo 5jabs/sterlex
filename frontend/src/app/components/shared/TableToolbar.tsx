@@ -22,7 +22,7 @@ export function TableToolbar<T extends string>({
     const hasItems = items.length > 0;
 
     return (
-        <div className="flex h-10 min-w-0 items-center gap-2 overflow-hidden border-b border-gray-200 px-4 md:px-10">
+        <div className="flex min-h-10 min-w-0 items-center gap-2 overflow-x-auto overflow-y-hidden scrollbar-none border-b border-gray-200 px-4 md:h-10 md:px-10">
             {hasItems && (
                 <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto scrollbar-none md:gap-5">
                     {items.map((item) => (
