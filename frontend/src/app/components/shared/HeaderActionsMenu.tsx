@@ -30,7 +30,7 @@ export function HeaderActionsMenu({
                 <button
                     type="button"
                     className={cn(
-                        "inline-flex h-7 w-7 items-center justify-center rounded-full text-gray-600 transition-all",
+                        "inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition-all md:h-7 md:w-7",
                         "hover:bg-gray-100 hover:text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300",
                     )}
                     aria-label={title}

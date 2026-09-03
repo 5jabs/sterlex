@@ -241,7 +241,7 @@ function Hero() {
 
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="mx-auto max-w-4xl text-center">
-                    <h1 className="font-serif text-4xl font-medium tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
+                    <h1 className="font-serif text-5xl font-medium tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
                         <span
                             className="hero-enter block"
                             style={{ animationDelay: "0ms" }}
@@ -777,38 +777,36 @@ function Comparison() {
                 </Reveal>
 
                 <Reveal delay={120}>
-                    <div className="mt-14 overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
-                        <div className="min-w-[36rem]">
-                            <div className="grid grid-cols-3 bg-gray-100 text-[11px] font-medium uppercase tracking-wider text-gray-600 sm:text-xs">
-                                <div className="px-3 py-4 sm:px-6">&nbsp;</div>
-                                <div className="border-l border-gray-200 px-3 py-4 font-bitter text-base font-medium normal-case tracking-normal text-gray-900 sm:px-6">
-                                    Sterlex
+                    <div className="mt-14 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)]">
+                        <div className="grid grid-cols-3 bg-gray-100 text-[11px] font-medium uppercase tracking-wider text-gray-600 sm:text-xs">
+                            <div className="px-3 py-4 sm:px-6">&nbsp;</div>
+                            <div className="border-l border-gray-200 px-3 py-4 font-bitter text-base font-medium normal-case tracking-normal text-gray-900 sm:px-6">
+                                Sterlex
+                            </div>
+                            <div className="break-words border-l border-gray-200 px-3 py-4 sm:px-6">
+                                Traditional Enterprise Legal AI
+                            </div>
+                        </div>
+                        {COMPARISON_ROWS.map((row, i) => (
+                            <div
+                                key={row.label}
+                                className={cn(
+                                    "grid grid-cols-3 text-xs transition-colors duration-200 hover:bg-accent-blue/[0.03] sm:text-sm",
+                                    i !== 0 && "border-t border-gray-200",
+                                )}
+                            >
+                                <div className="break-words px-3 py-5 font-medium text-gray-900 sm:px-6">
+                                    {row.label}
                                 </div>
-                                <div className="break-words border-l border-gray-200 px-3 py-4 sm:px-6">
-                                    Traditional Enterprise Legal AI
+                                <div className="flex items-start gap-1.5 break-words border-l border-gray-200 bg-accent-blue/[0.04] px-3 py-5 text-gray-900 sm:gap-2 sm:px-6">
+                                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-blue" />
+                                    <span>{row.sterlex}</span>
+                                </div>
+                                <div className="break-words border-l border-gray-200 px-3 py-5 text-gray-600 sm:px-6">
+                                    {row.other}
                                 </div>
                             </div>
-                            {COMPARISON_ROWS.map((row, i) => (
-                                <div
-                                    key={row.label}
-                                    className={cn(
-                                        "grid grid-cols-3 text-xs transition-colors duration-200 hover:bg-accent-blue/[0.03] sm:text-sm",
-                                        i !== 0 && "border-t border-gray-200",
-                                    )}
-                                >
-                                    <div className="break-words px-3 py-5 font-medium text-gray-900 sm:px-6">
-                                        {row.label}
-                                    </div>
-                                    <div className="flex items-start gap-1.5 break-words border-l border-gray-200 bg-accent-blue/[0.04] px-3 py-5 text-gray-900 sm:gap-2 sm:px-6">
-                                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent-blue" />
-                                        <span>{row.sterlex}</span>
-                                    </div>
-                                    <div className="break-words border-l border-gray-200 px-3 py-5 text-gray-600 sm:px-6">
-                                        {row.other}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        ))}
                     </div>
                 </Reveal>
             </div>

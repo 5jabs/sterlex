@@ -421,10 +421,10 @@ function pageHeaderActionControlClassName({
     className,
 }: PageHeaderActionControlClassNameOptions = {}) {
     return cn(
-        "flex h-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-gray-100 active:bg-gray-100 disabled:cursor-default disabled:text-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-300",
+        "flex h-9 items-center justify-center rounded-full text-sm transition-colors hover:bg-gray-100 active:bg-gray-100 disabled:cursor-default disabled:text-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-300 md:h-7",
         iconOnly
-            ? "w-7"
-            : "w-7 gap-1.5 px-0 sm:w-auto sm:px-3",
+            ? "w-9 md:w-7"
+            : "w-9 gap-1.5 px-0 sm:w-auto sm:px-3 md:w-7",
         disabled ? "cursor-default" : "cursor-pointer",
         "hover:bg-gray-100 active:bg-gray-100",
         variant === "danger"

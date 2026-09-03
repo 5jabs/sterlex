@@ -41,7 +41,7 @@ export function MarkdownContent({
     return (
         <div
             ref={divRef}
-            className="text-gray-900 mb-4 text-base prose prose-sm max-w-none font-serif"
+            className="mb-4 max-w-none overflow-x-auto font-serif text-base text-gray-900 prose prose-sm"
         >
             <ReactMarkdown
                 remarkPlugins={[
@@ -88,13 +88,13 @@ export function MarkdownContent({
                     ),
                     h1: (props) => (
                         <h1
-                            className="mt-6 mb-4 text-3xl font-serif font-semibold"
+                            className="mt-6 mb-4 font-serif text-2xl font-semibold md:text-3xl"
                             {...withoutMarkdownNode(props)}
                         />
                     ),
                     h2: (props) => (
                         <h2
-                            className="mt-5 mb-3 text-2xl font-serif font-semibold"
+                            className="mt-5 mb-3 font-serif text-xl font-semibold md:text-2xl"
                             {...withoutMarkdownNode(props)}
                         />
                     ),

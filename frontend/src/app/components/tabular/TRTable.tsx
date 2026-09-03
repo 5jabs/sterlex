@@ -228,15 +228,15 @@ export const TRTable = forwardRef<TRTableHandle, Props>(function TRTable(
                     {dragOverFiles && (
                         <div className="absolute inset-0 z-[90] border-2 border-burgundy-400 bg-burgundy-50/40 pointer-events-none" />
                     )}
-                    <div className="flex flex-1 flex-col items-start justify-center w-full max-w-xs mx-auto">
-                        <Table2 className="h-8 w-8 text-gray-300 mb-4" />
-                        <p className="text-2xl font-medium font-serif text-gray-900">
+                    <div className="mx-auto flex w-full max-w-xs flex-col items-start justify-center px-4">
+                        <Table2 className="mb-4 h-8 w-8 text-gray-300" />
+                        <p className="font-serif text-xl font-medium text-gray-900 md:text-2xl">
                             Tabular Review
                         </p>
-                        <p className="mt-1 text-xs text-gray-400 text-left">
+                        <p className="mt-1 text-left text-xs text-gray-400">
                             Add columns and documents to get started.
                         </p>
-                        <div className="mt-4 flex items-center gap-2">
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
                             <button
                                 onClick={onAddColumn}
                                 className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-gray-700 shadow-md"

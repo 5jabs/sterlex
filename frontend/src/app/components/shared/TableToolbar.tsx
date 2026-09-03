@@ -22,14 +22,14 @@ export function TableToolbar<T extends string>({
     const hasItems = items.length > 0;
 
     return (
-        <div className="flex items-center h-10 px-4 border-b border-gray-200 md:px-10">
+        <div className="flex h-10 min-w-0 items-center gap-2 overflow-hidden border-b border-gray-200 px-4 md:px-10">
             {hasItems && (
-                <div className="flex-1 flex items-center gap-5">
+                <div className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto scrollbar-none md:gap-5">
                     {items.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => onChange(item.id)}
-                            className={`text-xs transition-colors ${
+                            className={`shrink-0 whitespace-nowrap py-2 text-xs transition-colors ${
                                 active === item.id
                                     ? "font-medium text-gray-700"
                                     : "font-normal text-gray-500 hover:text-gray-700"
@@ -44,8 +44,8 @@ export function TableToolbar<T extends string>({
                 <div
                     className={
                         hasItems
-                            ? "flex items-center gap-2"
-                            : "flex flex-1 items-center gap-2"
+                            ? "flex shrink-0 items-center gap-2"
+                            : "flex min-w-0 flex-1 items-center gap-2"
                     }
                 >
                     {actions}

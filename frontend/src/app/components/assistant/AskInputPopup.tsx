@@ -565,7 +565,7 @@ function OptionInput({
                                         }
                                     }}
                                     placeholder="Type your answer..."
-                                    className="flex-1 resize-none overflow-hidden bg-transparent text-sm leading-5 text-gray-600 outline-none placeholder:text-gray-400"
+                                    className="flex-1 resize-none overflow-hidden bg-transparent text-base leading-5 text-gray-600 outline-none placeholder:text-gray-400 md:text-sm"
                                 />
                                 <button
                                     type="button"
