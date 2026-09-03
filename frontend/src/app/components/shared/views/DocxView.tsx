@@ -482,7 +482,7 @@ export function DocxView({
             )}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-auto px-5 pt-5 pb-3 docx-view-scroll"
+                className="flex-1 overflow-auto px-3 pt-4 pb-3 docx-view-scroll md:px-5 md:pt-5"
                 data-document-id={documentId}
                 data-version-id={versionId ?? ""}
             >

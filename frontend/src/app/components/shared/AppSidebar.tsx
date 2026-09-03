@@ -211,7 +211,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                 }}
                                 title={!isOpen ? label : ""}
                                 className={cn(
-                                    "w-full h-10 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
+                                    "w-full h-11 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
                                     isActive
                                         ? "bg-gray-200/60 text-gray-900"
                                         : "text-gray-700 hover:bg-gray-100",

@@ -115,7 +115,7 @@ export function Modal({
                     never clipped by the header/footer). Content that can exceed
                     the modal height wraps its scrollable region in an inner
                     `overflow-y-auto` div. */}
-                <div className="flex min-h-0 flex-1 flex-col px-5">
+                <div className="flex min-h-0 flex-1 flex-col px-4 sm:px-5">
                     {children}
                 </div>
                 {hasFooter && (

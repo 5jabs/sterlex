@@ -287,7 +287,7 @@ export function EditCard({
                     {annotation.reason}
                 </p>
             )}
-            <div className="text-sm leading-relaxed font-serif bg-gray-100/70 rounded-lg px-2 py-2">
+            <div className="break-words text-sm leading-relaxed font-serif bg-gray-100/70 rounded-lg px-2 py-2">
                 {annotation.inserted_text && (
                     <span className="text-green-700">
                         {annotation.inserted_text}
@@ -299,7 +299,7 @@ export function EditCard({
                     </span>
                 )}
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
                 <PillButton
                     tone="black"
                     size="sm"

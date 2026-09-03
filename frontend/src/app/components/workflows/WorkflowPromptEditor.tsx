@@ -55,7 +55,7 @@ function AppToolbarButton({
             title={title}
             aria-label={title}
             aria-pressed={active}
-            className={`h-7 w-7 text-gray-600 hover:bg-white hover:text-gray-900 ${
+            className={`h-9 w-9 text-gray-600 hover:bg-white hover:text-gray-900 md:h-7 md:w-7 ${
                 active ? "bg-gray-300 text-gray-950 hover:bg-gray-300" : ""
             }`}
             onMouseDown={(e) => {
@@ -359,7 +359,7 @@ export function WorkflowPromptEditor({
             }`}
         >
             {!readOnly && editor && (
-                <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50 shrink-0">
+                <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-gray-100 bg-gray-50 px-2 py-1.5">
                     <AppToolbarButton
                         onClick={() =>
                             rawMode
