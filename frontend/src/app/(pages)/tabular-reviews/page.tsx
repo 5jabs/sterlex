@@ -300,14 +300,14 @@ export default function TabularReviewsPage() {
                         <TableHeaderCell className="ml-auto w-24">
                             Columns
                         </TableHeaderCell>
-                        <TableHeaderCell className="w-24">Documents</TableHeaderCell>
-                        <TableHeaderCell className="w-40">
+                        <TableHeaderCell className="w-24 max-md:hidden">Documents</TableHeaderCell>
+                        <TableHeaderCell className="w-40 max-md:hidden">
                             <div className="flex items-center gap-1">
                                 <span>Project</span>
                                 {projectFilterButton}
                             </div>
                         </TableHeaderCell>
-                        <TableHeaderCell className="w-32">Created</TableHeaderCell>
+                        <TableHeaderCell className="w-32 max-md:hidden">Created</TableHeaderCell>
                         <TableHeaderCell className="w-8" />
                     </TableHeaderRow>
                 }
@@ -330,13 +330,13 @@ export default function TabularReviewsPage() {
                                 <TableCell className="ml-auto w-24">
                                     <SkeletonLine className="w-8" />
                                 </TableCell>
-                                <TableCell className="w-24">
+                                <TableCell className="w-24 max-md:hidden">
                                     <SkeletonLine className="w-8" />
                                 </TableCell>
-                                <TableCell className="w-40">
+                                <TableCell className="w-40 max-md:hidden">
                                     <SkeletonLine className="w-24" />
                                 </TableCell>
-                                <TableCell className="w-32">
+                                <TableCell className="w-32 max-md:hidden">
                                     <SkeletonLine className="w-20" />
                                 </TableCell>
                                 <TableCell className="w-8" />
@@ -432,10 +432,10 @@ export default function TabularReviewsPage() {
                                     <TableCell className="ml-auto w-24">
                                         {review.columns_config?.length ?? 0}
                                     </TableCell>
-                                    <TableCell className="w-24">
+                                    <TableCell className="w-24 max-md:hidden">
                                         {review.document_count ?? 0}
                                     </TableCell>
-                                    <TableCell className="w-40 pr-2">
+                                    <TableCell className="w-40 pr-2 max-md:hidden">
                                         {project ? (
                                             project.name
                                         ) : (
@@ -444,7 +444,7 @@ export default function TabularReviewsPage() {
                                             </span>
                                         )}
                                     </TableCell>
-                                    <TableCell className="w-32">
+                                    <TableCell className="w-32 max-md:hidden">
                                         {review.created_at ? (
                                             formatDate(review.created_at)
                                         ) : (

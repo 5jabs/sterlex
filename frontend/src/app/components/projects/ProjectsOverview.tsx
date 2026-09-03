@@ -296,14 +296,14 @@ export function ProjectsOverview() {
                             <span>Name</span>
                         </TableStickyCell>
                         <TableHeaderCell className="ml-auto w-32">CM</TableHeaderCell>
-                        <TableHeaderCell className="w-36">Practice</TableHeaderCell>
-                        <TableHeaderCell className="w-32">Owner</TableHeaderCell>
-                        <TableHeaderCell className="w-24">Files</TableHeaderCell>
-                        <TableHeaderCell className="w-24">Chats</TableHeaderCell>
-                        <TableHeaderCell className="w-36">
+                        <TableHeaderCell className="w-36 max-md:hidden">Practice</TableHeaderCell>
+                        <TableHeaderCell className="w-32 max-md:hidden">Owner</TableHeaderCell>
+                        <TableHeaderCell className="w-24 max-md:hidden">Files</TableHeaderCell>
+                        <TableHeaderCell className="w-24 max-md:hidden">Chats</TableHeaderCell>
+                        <TableHeaderCell className="w-36 max-md:hidden">
                             Tabular Reviews
                         </TableHeaderCell>
-                        <TableHeaderCell className="w-32">Created</TableHeaderCell>
+                        <TableHeaderCell className="w-32 max-md:hidden">Created</TableHeaderCell>
                         <TableHeaderCell className="w-8" />
                     </TableHeaderRow>
                 }
@@ -326,22 +326,22 @@ export function ProjectsOverview() {
                                 <TableCell className="ml-auto w-32">
                                     <SkeletonLine className="w-20" />
                                 </TableCell>
-                                <TableCell className="w-36">
+                                <TableCell className="w-36 max-md:hidden">
                                     <SkeletonLine className="w-20" />
                                 </TableCell>
-                                <TableCell className="w-32">
+                                <TableCell className="w-32 max-md:hidden">
                                     <SkeletonLine className="w-16" />
                                 </TableCell>
-                                <TableCell className="w-24">
+                                <TableCell className="w-24 max-md:hidden">
                                     <SkeletonLine className="w-8" />
                                 </TableCell>
-                                <TableCell className="w-24">
+                                <TableCell className="w-24 max-md:hidden">
                                     <SkeletonLine className="w-8" />
                                 </TableCell>
-                                <TableCell className="w-36">
+                                <TableCell className="w-36 max-md:hidden">
                                     <SkeletonLine className="w-8" />
                                 </TableCell>
-                                <TableCell className="w-32">
+                                <TableCell className="w-32 max-md:hidden">
                                     <SkeletonLine className="w-20" />
                                 </TableCell>
                                 <TableCell className="w-8" />
@@ -439,26 +439,26 @@ export function ProjectsOverview() {
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell className="w-36">
+                                <TableCell className="w-36 max-md:hidden">
                                     {project.practice ?? (
                                         <span className="text-gray-300">
                                             —
                                         </span>
                                     )}
                                 </TableCell>
-                                <TableCell className="w-32">
+                                <TableCell className="w-32 max-md:hidden">
                                     {getProjectOwnerLabel(project, user?.id)}
                                 </TableCell>
-                                <TableCell className="w-24">
+                                <TableCell className="w-24 max-md:hidden">
                                     {project.document_count ?? 0}
                                 </TableCell>
-                                <TableCell className="w-24">
+                                <TableCell className="w-24 max-md:hidden">
                                     {project.chat_count ?? 0}
                                 </TableCell>
-                                <TableCell className="w-36">
+                                <TableCell className="w-36 max-md:hidden">
                                     {project.review_count ?? 0}
                                 </TableCell>
-                                <TableCell className="w-32">
+                                <TableCell className="w-32 max-md:hidden">
                                     {formatDate(project.created_at)}
                                 </TableCell>
 
