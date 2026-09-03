@@ -1781,12 +1781,12 @@ export function TRChatPanel({
                 }`}
             />
             {/* Header */}
-            <div className="flex items-center justify-between h-8 pr-2 border-b border-gray-200 shrink-0">
+            <div className="flex min-h-11 items-center justify-between border-b border-gray-200 pr-2 shrink-0 md:h-8 md:min-h-0">
                 <div className="flex items-center gap-1 pl-2 pr-2 min-w-0">
                     <button
                         onClick={onClose}
                         title="Close"
-                        className="flex items-center justify-center h-7 w-7 shrink-0 rounded-md text-gray-600 hover:text-gray-900 transition-colors"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-gray-600 hover:text-gray-900 transition-colors md:h-7 md:w-7"
                     >
                         <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
@@ -1818,7 +1818,7 @@ export function TRChatPanel({
                         <button
                             onClick={() => setHistoryOpen((v) => !v)}
                             title="Chat history"
-                            className={`flex items-center justify-center h-7 w-7 rounded-md transition-colors ${historyOpen ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
+                            className={`flex h-11 w-11 items-center justify-center rounded-md transition-colors md:h-7 md:w-7 ${historyOpen ? "text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
                         >
                             <Clock className="h-3.5 w-3.5" />
                         </button>
@@ -1835,7 +1835,7 @@ export function TRChatPanel({
                     <button
                         onClick={handleNewChat}
                         title="New chat"
-                        className="flex items-center justify-center h-7 w-7 rounded-md text-gray-600 hover:text-gray-900 transition-colors"
+                        className="flex h-11 w-11 items-center justify-center rounded-md text-gray-600 hover:text-gray-900 transition-colors md:h-7 md:w-7"
                     >
                         <MessageSquarePlus className="h-3.5 w-3.5" />
                     </button>
@@ -1843,7 +1843,7 @@ export function TRChatPanel({
                         <button
                             onClick={handleDeleteChat}
                             title="Delete chat"
-                            className="flex items-center justify-center h-7 w-7 rounded-md text-gray-600 hover:text-red-600 transition-colors"
+                            className="flex h-11 w-11 items-center justify-center rounded-md text-gray-600 hover:text-red-600 transition-colors md:h-7 md:w-7"
                         >
                             <Trash2 className="h-3.5 w-3.5" />
                         </button>

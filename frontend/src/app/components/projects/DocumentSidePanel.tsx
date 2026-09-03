@@ -455,7 +455,7 @@ export function DocumentSidePanel({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-7 w-7 items-center justify-center text-gray-500 transition-colors hover:text-gray-900"
+                        className="flex h-11 w-11 items-center justify-center text-gray-500 transition-colors hover:text-gray-900 md:h-7 md:w-7"
                         title="Close"
                     >
                         <X className="h-4 w-4" />
