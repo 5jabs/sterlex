@@ -19,8 +19,8 @@ export function InitialView({ onSubmit }: InitialViewProps) {
                 <SiteLogo size="xl" className="text-4xl md:text-6xl" />
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="flex-col items-center w-full max-w-4xl relative px-0 xl:px-8">
+            <div className="flex flex-1 flex-col items-center justify-center pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <div className="relative flex w-full max-w-4xl flex-col items-center px-0 xl:px-8">
                     <ChatInput
                         onSubmit={onSubmit}
                         onCancel={() => {}}
