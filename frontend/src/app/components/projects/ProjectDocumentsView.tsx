@@ -2937,6 +2937,43 @@ export function ProjectDocumentsView({ projectId }: Props) {
                 onDelete={async (doc) => {
                     await handleRemoveDoc(doc.id);
                 }}
+                projectId={projectId}
+                projectName={project?.name}
+                projectCmNumber={project?.cm_number}
+                onDocumentMutated={() => {
+                    if (!sidePanelDoc) return;
+                    const docId = sidePanelDoc.id;
+                    void listDocumentVersions(docId)
+                        .then((res) => {
+                            setVersionsByDocId((prev) => {
+                                const next = new Map(prev);
+                                next.set(docId, {
+                                    currentVersionId: res.current_version_id,
+                                    versions: res.versions,
+                                });
+                                return next;
+                            });
+                            const current = res.versions.find(
+                                (version) =>
+                                    version.id === res.current_version_id,
+                            );
+                            if (res.current_version_id) {
+                                setViewingDocVersion({
+                                    id: res.current_version_id,
+                                    label:
+                                        current?.filename?.trim() ||
+                                        sidePanelDoc.filename,
+                                });
+                            }
+                        })
+                        .catch(() => {});
+                    void getProject(projectId)
+                        .then((loaded) => {
+                            setProject(loaded);
+                            setFolders(loaded.folders ?? []);
+                        })
+                        .catch(() => {});
+                }}
             />
 
         </div>
