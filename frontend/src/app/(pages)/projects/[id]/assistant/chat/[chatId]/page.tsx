@@ -13,12 +13,19 @@ import {
     ChevronLeft,
     ChevronRight,
     FileText,
+    Folder,
     Loader2,
     Pencil,
     Trash2,
     Upload,
     X,
 } from "lucide-react";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
+import { MobileChatFab } from "@/app/components/projects/MobileChatFab";
+import {
+    PROJECT_CHAT_BOTTOM_PADDING,
+    ProjectChatPane,
+} from "@/app/components/projects/ProjectChatPane";
 import {
     deleteChat,
     deleteDocument,
@@ -33,9 +40,6 @@ import {
 } from "@/app/lib/sterlexApi";
 import { useAssistantChat } from "@/app/hooks/useAssistantChat";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
-import { UserMessage } from "@/app/components/assistant/UserMessage";
-import { AssistantMessage } from "@/app/components/assistant/AssistantMessage";
-import { ChatInput } from "@/app/components/assistant/ChatInput";
 import type { ChatInputHandle } from "@/app/components/assistant/ChatInput";
 import { ProjectExplorer } from "@/app/components/projects/ProjectExplorer";
 import { PdfView } from "@/app/components/shared/views/PdfView";
@@ -58,6 +62,7 @@ import {
     expandCitationToEntries,
     isSpreadsheetFilename,
 } from "@/app/components/shared/types";
+import { cn } from "@/app/lib/utils";
 
 interface Props {
     params: Promise<{ id: string; chatId: string }>;
@@ -91,7 +96,8 @@ const EXPLORER_MIN = 160;
 const EXPLORER_DEFAULT = 280;
 const CHAT_MIN = 320;
 const CHAT_DEFAULT = 420;
-const DEFAULT_ASSISTANT_BOTTOM_PADDING = 116;
+const DEFAULT_ASSISTANT_BOTTOM_PADDING = PROJECT_CHAT_BOTTOM_PADDING;
+const COMPACT_LAYOUT_PX = 1024;
 
 function AssistantGreeting() {
     return (
@@ -178,6 +184,9 @@ export default function ProjectAssistantChatPage({ params }: Props) {
     const [explorerWidth, setExplorerWidth] = useState(EXPLORER_DEFAULT);
     const [chatWidth, setChatWidth] = useState(CHAT_DEFAULT);
     const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+    const isCompact = useIsMobile(COMPACT_LAYOUT_PX);
+    const [mobileExplorerOpen, setMobileExplorerOpen] = useState(false);
+    const [mobileChatOpen, setMobileChatOpen] = useState(true);
 
     // Upload state
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +211,6 @@ export default function ProjectAssistantChatPage({ params }: Props) {
     const tabItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const chatInputRef = useRef<ChatInputHandle | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const latestUserMessageRef = useRef<HTMLDivElement>(null);
     const [minHeight, setMinHeight] = useState("0px");
@@ -419,6 +427,8 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         setActiveTabId(docId);
         setActiveQuotes(quotes && quotes.length ? quotes : null);
         setSelectedDocId(docId);
+        setMobileExplorerOpen(false);
+        setMobileChatOpen(false);
     }
 
     function closeTab(docId: string) {
@@ -430,6 +440,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                 setActiveTabId(fallback?.documentId ?? null);
                 setActiveQuotes(null);
                 setSelectedDocId(fallback?.documentId ?? null);
+                if (!fallback) setMobileChatOpen(true);
             }
             return next;
         });
@@ -439,6 +450,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         setActiveTabId(docId);
         setActiveQuotes(null);
         setSelectedDocId(docId);
+        setMobileChatOpen(false);
     }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -751,6 +763,27 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         setChatWidth((w) => Math.max(CHAT_MIN, w - dx));
     }, []);
 
+    useEffect(() => {
+        if (!isCompact) return;
+        function onKey(event: KeyboardEvent) {
+            if (event.key !== "Escape") return;
+            if (mobileExplorerOpen) {
+                setMobileExplorerOpen(false);
+                return;
+            }
+            if (mobileChatOpen && activeTabId) {
+                setMobileChatOpen(false);
+            }
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [activeTabId, isCompact, mobileChatOpen, mobileExplorerOpen]);
+
+    const showDesktopExplorer = !isCompact && !explorerCollapsed;
+    const showMobileExplorer = isCompact && mobileExplorerOpen;
+    const showChatOverlay =
+        !isCompact || mobileChatOpen || !activeTabId;
+
     return (
         <div className="flex flex-col h-full">
             {/* Page header */}
@@ -820,13 +853,29 @@ export default function ProjectAssistantChatPage({ params }: Props) {
             />
 
             {/* Three-panel body */}
-            <div className="flex flex-1 min-h-0 border-t border-gray-200 overflow-hidden">
+            <div className="relative flex min-h-0 flex-1 overflow-hidden border-t border-gray-200">
+                {isCompact && mobileExplorerOpen && (
+                    <button
+                        type="button"
+                        aria-label="Close explorer"
+                        className="absolute inset-0 z-[45] bg-gray-900/20"
+                        onClick={() => setMobileExplorerOpen(false)}
+                    />
+                )}
                 {/* LEFT: Project Explorer */}
-                {!explorerCollapsed && (
+                {(showDesktopExplorer || showMobileExplorer) && (
                     <>
                         <div
-                            style={{ width: explorerWidth }}
-                            className="shrink-0 flex flex-col border-r border-gray-200"
+                            style={{
+                                width: isCompact
+                                    ? Math.min(explorerWidth, 320)
+                                    : explorerWidth,
+                            }}
+                            className={cn(
+                                "flex shrink-0 flex-col border-r border-gray-200 bg-white",
+                                isCompact &&
+                                    "absolute inset-y-0 left-0 z-50 shadow-[8px_0_24px_rgba(15,23,42,0.16)]",
+                            )}
                             onDragOver={(e) => {
                                 e.preventDefault();
                                 // Only show the upload overlay for external file drags, not internal moves
@@ -885,12 +934,22 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                                     </button>
                                     <button
                                         onClick={() =>
-                                            setExplorerCollapsed(true)
+                                            isCompact
+                                                ? setMobileExplorerOpen(false)
+                                                : setExplorerCollapsed(true)
                                         }
-                                        title="Collapse explorer"
-                                        className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                                        title={
+                                            isCompact
+                                                ? "Close explorer"
+                                                : "Collapse explorer"
+                                        }
+                                        className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
                                     >
-                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                        {isCompact ? (
+                                            <X className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <ChevronLeft className="h-3.5 w-3.5" />
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -941,12 +1000,14 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                                 />
                             </div>
                         </div>
-                        <Divider onDrag={onExplorerDividerDrag} />
+                        {!isCompact && (
+                            <Divider onDrag={onExplorerDividerDrag} />
+                        )}
                     </>
                 )}
 
                 {/* Collapsed explorer toggle */}
-                {explorerCollapsed && (
+                {!isCompact && explorerCollapsed && (
                     <div className="shrink-0 flex flex-col border-r border-gray-200">
                         <div className="h-10 flex items-center justify-center border-b border-gray-200 shrink-0 px-1">
                             <button
@@ -961,12 +1022,23 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                 )}
 
                 {/* CENTER: Document Panel */}
-                <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
+                <div className="flex min-w-0 flex-1 flex-col border-r border-gray-200">
                     {/* Tab bar */}
                     <div
                         ref={tabBarRef}
-                        className="h-10 flex items-end border-b border-gray-200 shrink-0 overflow-x-auto min-w-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        className="flex h-10 min-w-0 shrink-0 items-end overflow-x-auto border-b border-gray-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                     >
+                        {isCompact && (
+                            <button
+                                type="button"
+                                onClick={() => setMobileExplorerOpen(true)}
+                                className="flex h-full w-11 shrink-0 items-center justify-center text-gray-500 transition-colors hover:text-gray-900"
+                                title="Open explorer"
+                                aria-label="Open explorer"
+                            >
+                                <Folder className="h-4 w-4" />
+                            </button>
+                        )}
                         {tabs.length === 0 ? (
                             <span className="px-4 self-center text-xs text-gray-700">
                                 Document Viewer
@@ -1114,128 +1186,85 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                     </div>
                 </div>
 
-                <Divider onDrag={onChatDividerDrag} />
+                {!isCompact && <Divider onDrag={onChatDividerDrag} />}
 
                 {/* RIGHT: Assistant Panel */}
                 <div
-                    style={{ width: chatWidth }}
-                    className="relative shrink-0 flex flex-col"
+                    style={isCompact ? undefined : { width: chatWidth }}
+                    className={cn(
+                        "relative flex flex-col bg-white",
+                        isCompact
+                            ? cn(
+                                  "absolute inset-0 z-40",
+                                  showChatOverlay ? "flex" : "hidden",
+                              )
+                            : "h-full min-h-0 w-auto shrink-0",
+                    )}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleChatDrop}
                 >
-                    <div className="h-10 flex items-center px-4 border-b border-gray-200 shrink-0">
-                        <span className="text-xs text-gray-700">
-                            Project Assistant
-                        </span>
+                    <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-2 md:h-10 md:px-4">
+                        <div className="flex min-w-0 items-center gap-1">
+                            {isCompact && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileExplorerOpen(true)}
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center text-gray-500 transition-colors hover:text-gray-900"
+                                    title="Open explorer"
+                                    aria-label="Open explorer"
+                                >
+                                    <Folder className="h-4 w-4" />
+                                </button>
+                            )}
+                            <span className="truncate px-1 text-xs text-gray-700 md:px-0">
+                                Project Assistant
+                            </span>
+                        </div>
+                        {isCompact && activeTab && (
+                            <button
+                                type="button"
+                                onClick={() => setMobileChatOpen(false)}
+                                className="inline-flex h-11 shrink-0 items-center gap-1.5 px-2 text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
+                            >
+                                <FileText className="h-3.5 w-3.5" />
+                                Document
+                            </button>
+                        )}
                     </div>
 
-                    {/* Messages / greeting / shimmer */}
-                    {!chatLoaded ? (
-                        <div className="flex-1 px-4 py-4 space-y-4">
-                            <div className="flex justify-end">
-                                <div className="bg-gray-100 rounded-2xl p-4 w-3/4">
-                                    <div className="h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded w-full" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                {[1, 2, 3].map((i) => (
-                                    <div
-                                        key={i}
-                                        className={`h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-[shimmer_2s_ease-in-out_infinite] rounded ${i === 3 ? "w-4/6" : "w-full"}`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ) : messages.length === 0 ? (
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <AssistantGreeting />
-                        </div>
-                    ) : (
-                        <div
-                            ref={messagesContainerRef}
-                            className="flex-1 overflow-y-auto px-4 pt-6 md:pt-8 space-y-6 md:space-y-8 min-h-0"
-                            style={{
-                                paddingBottom: DEFAULT_ASSISTANT_BOTTOM_PADDING,
-                                scrollbarGutter: "stable",
-                            }}
-                        >
-                            {(() => {
-                                const lastUserIdx = messages
-                                    .map((m) => m.role)
-                                    .lastIndexOf("user");
-                                const lastAssistantIdx = messages
-                                    .map((m) => m.role)
-                                    .lastIndexOf("assistant");
-                                return messages.map((msg, i) =>
-                                    msg.role === "user" ? (
-                                        <div
-                                            key={i}
-                                            ref={
-                                                i === lastUserIdx
-                                                    ? latestUserMessageRef
-                                                    : null
-                                            }
-                                        >
-                                            <UserMessage
-                                                content={msg.content ?? ""}
-                                                files={msg.files}
-                                                workflow={msg.workflow}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <AssistantMessage
-                                            key={i}
-                                            events={msg.events}
-                                            isStreaming={
-                                                i === messages.length - 1 &&
-                                                isResponseLoading
-                                            }
-                                            isError={!!msg.error}
-                                            citations={msg.citations}
-                                            citationStatus={
-                                                msg.citationStatus
-                                            }
-                                            onCitationClick={
-                                                handleCitationClick
-                                            }
-                                            minHeight={
-                                                i === lastAssistantIdx
-                                                    ? minHeight
-                                                    : "0px"
-                                            }
-                                            onEditViewClick={
-                                                handleEditViewClick
-                                            }
-                                            onOpenDocument={handleOpenDocument}
-                                            onEditResolved={handleEditResolved}
-                                            onEditError={handleEditError}
-                                            isDocReloading={(docId) =>
-                                                reloadingDocIds.has(docId)
-                                            }
-                                        />
-                                    ),
-                                );
-                            })()}
-                            <div ref={messagesEndRef} />
-                        </div>
-                    )}
-
-                    {/* ChatInput */}
-                    <div className="absolute bottom-2 left-0 right-0 z-30 w-full md:bottom-3">
-                        <div className="pointer-events-none absolute -bottom-2 left-4 right-4 z-0 h-7 bg-white/50 backdrop-blur-[1px] md:-bottom-3" />
-                        <div className="relative z-20 w-full px-4">
-                            <ChatInput
-                                ref={chatInputRef}
-                                onSubmit={handleSubmit}
-                                onCancel={cancel}
-                                isLoading={isResponseLoading}
-                                hideAddDocButton
-                                projectName={project?.name}
-                                projectCmNumber={project?.cm_number}
-                            />
-                        </div>
-                    </div>
+                    <ProjectChatPane
+                        chatLoaded={chatLoaded}
+                        messages={messages}
+                        isResponseLoading={isResponseLoading}
+                        minHeight={minHeight}
+                        projectName={project?.name}
+                        projectCmNumber={project?.cm_number}
+                        hideAddDocButton={!isCompact}
+                        greeting={<AssistantGreeting />}
+                        onSubmit={handleSubmit}
+                        onCancel={cancel}
+                        onCitationClick={handleCitationClick}
+                        onEditViewClick={handleEditViewClick}
+                        onOpenDocument={handleOpenDocument}
+                        onEditResolved={handleEditResolved}
+                        onEditError={handleEditError}
+                        isDocReloading={(docId) => reloadingDocIds.has(docId)}
+                        chatInputRef={chatInputRef}
+                        latestUserMessageRef={latestUserMessageRef}
+                        messagesContainerRef={messagesContainerRef}
+                    />
                 </div>
+
+                {isCompact &&
+                    activeTab &&
+                    !mobileChatOpen &&
+                    !mobileExplorerOpen && (
+                        <MobileChatFab
+                            onClick={() => setMobileChatOpen(true)}
+                            busy={isResponseLoading}
+                            className="absolute bottom-20 right-4 z-30"
+                        />
+                    )}
             </div>
             <OwnerOnlyPopup
                 open={!!ownerOnlyAction}

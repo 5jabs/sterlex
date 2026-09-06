@@ -7,11 +7,14 @@ import {
     Check,
     Download,
     Loader2,
+    MessageSquare,
     Pencil,
     Trash2,
     Upload,
     X,
 } from "lucide-react";
+import { MobileChatFab } from "./MobileChatFab";
+import { ProjectDocumentChatOverlay } from "./ProjectDocumentChatOverlay";
 import { ConfirmPopup } from "@/app/components/popups/ConfirmPopup";
 import { PdfView } from "@/app/components/shared/views/PdfView";
 import { SpreadsheetView } from "@/app/components/shared/views/SpreadsheetView";
@@ -21,6 +24,7 @@ import { isSpreadsheetFilename } from "@/app/components/shared/types";
 import type { DocumentVersion } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
 import { formatBytes } from "./ProjectPageParts";
+import { useIsMobile } from "@/app/hooks/useIsMobile";
 
 const MIN_DOC_COLUMN_WIDTH = 420;
 const DEFAULT_DOC_COLUMN_WIDTH = 620;
@@ -68,6 +72,10 @@ interface DocumentSidePanelProps {
     canDelete?: boolean;
     onOwnerOnlyAction?: (action: string) => void;
     onDelete: (doc: Document) => Promise<void> | void;
+    projectId?: string;
+    projectName?: string;
+    projectCmNumber?: string | null;
+    onDocumentMutated?: () => void;
 }
 
 export function DocumentSidePanel({
@@ -87,6 +95,10 @@ export function DocumentSidePanel({
     canDelete = true,
     onOwnerOnlyAction,
     onDelete,
+    projectId,
+    projectName,
+    projectCmNumber,
+    onDocumentMutated,
 }: DocumentSidePanelProps) {
     const [mounted, setMounted] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -118,10 +130,11 @@ export function DocumentSidePanel({
     const [panelWidth, setPanelWidth] = useState(
         DEFAULT_DOC_COLUMN_WIDTH + RESIZER_WIDTH + DEFAULT_DATA_COLUMN_WIDTH,
     );
-    const [isMobile, setIsMobile] = useState(false);
+    const isMobile = useIsMobile();
     const [mobilePane, setMobilePane] = useState<"document" | "details">(
         "document",
     );
+    const [chatOpen, setChatOpen] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const replaceFileInputRef = useRef<HTMLInputElement>(null);
@@ -136,7 +149,6 @@ export function DocumentSidePanel({
     useEffect(() => {
         if (!mounted) return;
         function handleWindowResize() {
-            setIsMobile(window.innerWidth < 768);
             setPanelWidth((width) => clampPanelWidth(width, dataColumnWidth));
         }
         handleWindowResize();
@@ -160,6 +172,19 @@ export function DocumentSidePanel({
         setReplaceConfirmOpen(false);
         setMobilePane("document");
     }, [doc?.id, versionId, currentVersionId]);
+
+    useEffect(() => {
+        setChatOpen(false);
+    }, [doc?.id]);
+
+    useEffect(() => {
+        if (!chatOpen) return;
+        function onKey(event: KeyboardEvent) {
+            if (event.key === "Escape") setChatOpen(false);
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [chatOpen]);
 
     if (!mounted || !doc) return null;
 
@@ -404,8 +429,8 @@ export function DocumentSidePanel({
         <div
             ref={panelRef}
             className={cn(
-                "fixed z-[190] flex flex-col",
-                "inset-3 md:left-auto rounded-2xl border border-white/70 bg-gray-50/80 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl overflow-hidden",
+                "fixed z-[190] flex flex-col overflow-hidden",
+                "inset-3 md:left-auto rounded-2xl border border-white/70 bg-gray-50/80 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl",
             )}
             style={isMobile ? undefined : { width: panelWidth }}
         >
@@ -452,6 +477,17 @@ export function DocumentSidePanel({
                             Details
                         </button>
                     </div>
+                    {projectId && (
+                        <button
+                            type="button"
+                            onClick={() => setChatOpen(true)}
+                            className="flex h-11 w-11 items-center justify-center text-gray-500 transition-colors hover:text-gray-900 md:hidden"
+                            title="Open chat"
+                            aria-label="Open chat"
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onClose}
@@ -983,6 +1019,29 @@ export function DocumentSidePanel({
                 }}
                 onConfirm={() => void handleDeleteDocument()}
             />
+            {projectId && (
+                <ProjectDocumentChatOverlay
+                    key={activeDoc.id}
+                    open={chatOpen}
+                    onClose={() => setChatOpen(false)}
+                    projectId={projectId}
+                    projectName={projectName}
+                    projectCmNumber={projectCmNumber}
+                    document={activeDoc}
+                    onOpenDocument={({ versionId: nextVersionId }) => {
+                        if (nextVersionId) {
+                            onSelectVersion(nextVersionId, selectedFilename);
+                        }
+                    }}
+                    onDocumentMutated={onDocumentMutated}
+                />
+            )}
+            {isMobile && projectId && !chatOpen && (
+                <MobileChatFab
+                    onClick={() => setChatOpen(true)}
+                    className="absolute bottom-20 right-4 z-20 md:hidden"
+                />
+            )}
         </div>,
         document.body,
     );
