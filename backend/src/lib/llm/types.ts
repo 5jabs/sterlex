@@ -2,6 +2,8 @@
 // Callers always speak OpenAI-style tools + { role, content } messages; each
 // provider translates internally.
 
+import type { LlmTokenUsage } from "./tokenUsage";
+
 export type Provider = "claude" | "gemini" | "openai";
 
 export type OpenAIToolSchema = {
@@ -65,4 +67,10 @@ export type StreamChatParams = {
 
 export type StreamChatResult = {
     fullText: string;
+    usage?: LlmTokenUsage;
+};
+
+export type CompleteTextResult = {
+    text: string;
+    usage?: LlmTokenUsage;
 };

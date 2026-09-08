@@ -33,6 +33,13 @@ import {
 } from "../lib/llm";
 import { getUserModelSettings } from "../lib/userSettings";
 import {
+    OrganizationBudgetExceededError,
+    meteringFromSettings,
+    orgBudgetErrorPayload,
+    tryOrgBudgetGuard,
+    type LlmMetering,
+} from "../lib/llmUsage";
+import {
     checkProjectAccess,
     ensureReviewAccess,
     filterAccessibleDocumentIds,
@@ -215,14 +222,25 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
         `format handling is applied separately and must not be duplicated inside the prompt text.`;
 
     try {
-        const { title_model, api_keys } = await getUserModelSettings(userId);
+        const db = createServerSupabase();
+        const settings = await getUserModelSettings(userId, db);
+        if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+            return;
+        }
         const raw = await completeText({
-            model: title_model,
+            model: settings.title_model,
             systemPrompt:
                 'You write high-quality column prompts for legal tabular review workflows. Return only valid JSON with a single field: {"prompt": string}. The prompt you write must focus solely on what to extract — never on how to format the response.',
             user: userMessage,
             maxTokens: 512,
-            apiKeys: api_keys,
+            apiKeys: settings.api_keys,
+            metering: meteringFromSettings({
+                db,
+                userId,
+                organizationId: settings.organizationId,
+                model: settings.title_model,
+                apiKeySources: settings.api_key_sources,
+            }),
         });
         const parsed = JSON.parse(
             raw
@@ -235,7 +253,10 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
         } else {
             res.status(502).json({ detail: "LLM returned an empty prompt" });
         }
-    } catch {
+    } catch (err) {
+        if (err instanceof OrganizationBudgetExceededError) {
+            return void res.status(402).json(orgBudgetErrorPayload(err));
+        }
         res.status(502).json({ detail: "Failed to generate prompt from LLM" });
     }
 });
@@ -672,11 +693,12 @@ tabularRouter.post(
             return void res.status(404).json({ detail: "Document not found" });
         const docActive = await loadActiveVersion(document_id, db);
 
-        const { tabular_model, api_keys } = await getUserModelSettings(
+        const settings = await getUserModelSettings(
             userId,
             db,
             { projectId: review.project_id },
         );
+        const { tabular_model, api_keys } = settings;
         const missingKey = missingModelApiKey(tabular_model, api_keys);
         if (missingKey) {
             return void res.status(422).json({
@@ -684,6 +706,17 @@ tabularRouter.post(
                 ...missingKey,
             });
         }
+        if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+            return;
+        }
+        const metering = meteringFromSettings({
+            db,
+            userId,
+            projectId: review.project_id,
+            organizationId: settings.organizationId,
+            model: tabular_model,
+            apiKeySources: settings.api_key_sources,
+        });
 
         await db
             .from("tabular_cells")
@@ -718,6 +751,7 @@ tabularRouter.post(
             column.format,
             column.tags,
             api_keys,
+            metering,
         );
 
         if (!result) {
@@ -808,9 +842,10 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
         }[],
     );
 
-    const { tabular_model, api_keys } = await getUserModelSettings(userId, db, {
+    const settings = await getUserModelSettings(userId, db, {
         projectId: review.project_id,
     });
+    const { tabular_model, api_keys } = settings;
     const missingKey = missingModelApiKey(tabular_model, api_keys);
     if (missingKey) {
         return void res.status(422).json({
@@ -818,6 +853,17 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
             ...missingKey,
         });
     }
+    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        return;
+    }
+    const metering = meteringFromSettings({
+        db,
+        userId,
+        projectId: review.project_id,
+        organizationId: settings.organizationId,
+        model: tabular_model,
+        apiKeySources: settings.api_key_sources,
+    });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -910,6 +956,7 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
                             );
                         },
                         api_keys,
+                        metering,
                     );
                 } catch (err) {
                     console.error(
@@ -1230,9 +1277,10 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
         ),
     };
 
-    const { tabular_model, api_keys } = await getUserModelSettings(userId, db, {
+    const settings = await getUserModelSettings(userId, db, {
         projectId: review.project_id,
     });
+    const { tabular_model, api_keys } = settings;
     const missingKey = missingModelApiKey(tabular_model, api_keys);
     if (missingKey) {
         return void res.status(422).json({
@@ -1240,6 +1288,17 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             ...missingKey,
         });
     }
+    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        return;
+    }
+    const metering = meteringFromSettings({
+        db,
+        userId,
+        projectId: review.project_id,
+        organizationId: settings.organizationId,
+        model: tabular_model,
+        apiKeySources: settings.api_key_sources,
+    });
 
     // Create or verify chat record
     let chatId = existingChatId ?? null;
@@ -1321,6 +1380,7 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             model: tabular_model,
             apiKeys: api_keys,
             signal: streamAbort.signal,
+            metering,
         });
 
         const persistedEvents = stripTransientAssistantEvents(events);
@@ -1352,6 +1412,14 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
                     projectName: clientProjectName ?? null,
                 },
                 api_keys,
+                meteringFromSettings({
+                    db,
+                    userId,
+                    projectId: review.project_id,
+                    organizationId: settings.organizationId,
+                    model: title_model,
+                    apiKeySources: settings.api_key_sources,
+                }),
             );
             if (title) {
                 await db
@@ -1490,6 +1558,7 @@ async function queryTabularCell(
     format?: string,
     tags?: string[],
     apiKeys?: import("../lib/llm").UserApiKeys,
+    metering?: LlmMetering | null,
 ) {
     const suffix = formatPromptSuffix(format as never, tags);
     const fullPrompt = `${columnPrompt}${suffix} If not found, state "Not Found". Leave all reasoning and explanation in the "reasoning" field only.`;
@@ -1509,6 +1578,7 @@ The "summary" field must contain only the extracted value with inline citations 
             user: `Document: ${filename}\n\n${documentText.slice(0, 120_000)}\n\n---\nInstruction: ${fullPrompt}`,
             maxTokens: 2048,
             apiKeys,
+            metering,
         });
     } catch (err) {
         console.error("[queryTabularCell] completion failed", safeErrorLog(err));
@@ -1553,6 +1623,7 @@ async function generateChatTitle(
     firstUserMessage: string,
     context?: { reviewTitle?: string | null; projectName?: string | null },
     apiKeys?: import("../lib/llm").UserApiKeys,
+    metering?: LlmMetering | null,
 ): Promise<string | null> {
     try {
         const contextLines: string[] = [];
@@ -1569,6 +1640,7 @@ async function generateChatTitle(
             user: `${contextBlock}Generate a short title (4-6 words) for a chat that starts with the message below. The title should reflect the user's specific question, not the review or project name. Return only the title, no punctuation, no quotes:\n\n${firstUserMessage}`,
             maxTokens: 64,
             apiKeys,
+            metering,
         });
         return raw.trim().slice(0, 80) || null;
     } catch {
@@ -1644,6 +1716,7 @@ async function queryTabularAllColumns(
     columns: Column[],
     onResult: (columnIndex: number, result: CellResult) => Promise<void>,
     apiKeys?: import("../lib/llm").UserApiKeys,
+    metering?: LlmMetering | null,
 ): Promise<void> {
     const columnsDesc = columns
         .map((col) => {
@@ -1706,6 +1779,7 @@ Rules:
             messages: [{ role: "user", content: USER }],
             tools: [],
             apiKeys,
+            metering,
             callbacks: {
                 onContentDelta: (delta) => {
                     contentBuffer += delta;

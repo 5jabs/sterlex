@@ -24,6 +24,12 @@ import {
 } from "../lib/userSettings";
 import { checkProjectAccess } from "../lib/access";
 import { safeErrorLog, safeErrorMessage } from "../lib/safeError";
+import {
+    OrganizationBudgetExceededError,
+    meteringFromSettings,
+    orgBudgetErrorPayload,
+    tryOrgBudgetGuard,
+} from "../lib/llmUsage";
 
 export const chatRouter = Router();
 
@@ -417,16 +423,29 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
         return void res.status(404).json({ detail: "Chat not found" });
 
     try {
-        const { title_model, api_keys } = await getUserModelSettings(
+        const settings = await getUserModelSettings(
             userId,
             db,
             { projectId: chat.project_id },
         );
+        if (
+            !(await tryOrgBudgetGuard(db, settings.organizationId, res))
+        ) {
+            return;
+        }
         const titleText = await completeText({
-            model: title_model,
+            model: settings.title_model,
             user: `Generate a concise title (3–6 words) for a chat in an AI Legal Platform that starts with this message. The title should describe the topic or document — do NOT include words like "Legal Assistant", "AI", "Chat", or any similar prefix. If there is not enough information to generate a title, return exactly "${TITLE_FALLBACK}". Return only the title, no quotes or punctuation.\n\nMessage: ${message.slice(0, 500)}`,
             maxTokens: 64,
-            apiKeys: api_keys,
+            apiKeys: settings.api_keys,
+            metering: meteringFromSettings({
+                db,
+                userId,
+                projectId: chat.project_id,
+                organizationId: settings.organizationId,
+                model: settings.title_model,
+                apiKeySources: settings.api_key_sources,
+            }),
         });
         const title = normalizeGeneratedTitle(titleText);
 
@@ -437,6 +456,9 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
 
         res.json({ title });
     } catch (err) {
+        if (err instanceof OrganizationBudgetExceededError) {
+            return void res.status(402).json(orgBudgetErrorPayload(err));
+        }
         console.error("[generate-title]", safeErrorLog(err));
         res.status(500).json({ detail: "Failed to generate title" });
     }
@@ -505,6 +527,23 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         resolvedProjectId = existingProjectId;
         chatTitle = existing.title;
     }
+
+    const settings = await getUserModelSettings(userId, db, {
+        projectId: resolvedProjectId,
+    });
+    const apiKeys = settings.api_keys;
+    const legalResearchUs = settings.legal_research_us;
+    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        return;
+    }
+    const metering = meteringFromSettings({
+        db,
+        userId,
+        projectId: resolvedProjectId,
+        organizationId: settings.organizationId,
+        model,
+        apiKeySources: settings.api_key_sources,
+    });
 
     if (!chatId) {
         // If creating a chat tied to a project, the user must have access
@@ -578,12 +617,6 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         db,
         docIndex,
     );
-    const {
-        api_keys: apiKeys,
-        legal_research_us: legalResearchUs,
-    } = await getUserModelSettings(userId, db, {
-        projectId: resolvedProjectId,
-    });
     const apiMessages = buildMessages(
         enrichedMessages,
         docAvailability,
@@ -629,6 +662,7 @@ chatRouter.post("/", requireAuth, async (req, res) => {
             apiKeys,
             signal: streamAbort.signal,
             projectId: resolvedProjectId,
+            metering,
         });
 
         devLog("[chat/stream] LLM stream finished", {
