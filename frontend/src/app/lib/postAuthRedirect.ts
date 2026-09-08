@@ -6,11 +6,7 @@ export function postAuthRedirectPath(search = ""): string {
     if (invite) {
         return `/organizations/invites/${encodeURIComponent(invite)}`;
     }
-    const next = params.get("next")?.trim();
-    if (next && next.startsWith("/") && !next.startsWith("//")) {
-        return next;
-    }
-    return "/assistant";
+    return "/workspaces";
 }
 
 export function withCurrentSearch(href: string, search = ""): string {

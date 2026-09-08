@@ -14,7 +14,7 @@ export function CreateOrganizationModal({
     open: boolean;
     onClose: () => void;
 }) {
-    const { createOrganization } = useOrganization();
+    const { createOrganization, enterWorkspace } = useOrganization();
     const router = useRouter();
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
@@ -26,9 +26,10 @@ export function CreateOrganizationModal({
         setError("");
         try {
             const organization = await createOrganization(name.trim());
+            await enterWorkspace(organization.id);
             setName("");
             onClose();
-            router.push(`/organizations/${organization.id}`);
+            router.push("/projects");
         } catch (err) {
             setError((err as Error).message || "Failed to create organization");
         } finally {

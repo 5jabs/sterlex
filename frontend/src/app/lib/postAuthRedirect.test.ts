@@ -10,9 +10,10 @@ describe("post-auth redirect", () => {
         );
     });
 
-    it("allows a safe next path", () => {
-        assert.equal(postAuthRedirectPath("?next=/projects"), "/projects");
-        assert.equal(postAuthRedirectPath("?next=https://evil.test"), "/assistant");
+    it("sends everyone else to the workspace picker", () => {
+        assert.equal(postAuthRedirectPath(""), "/workspaces");
+        assert.equal(postAuthRedirectPath("?next=/projects"), "/workspaces");
+        assert.equal(postAuthRedirectPath("?next=https://evil.test"), "/workspaces");
     });
 
     it("preserves the current search string on auth links", () => {
