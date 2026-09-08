@@ -28,6 +28,7 @@ export interface Project {
   document_count?: number;
   chat_count?: number;
   review_count?: number;
+  member_count?: number;
 }
 
 export interface Document {

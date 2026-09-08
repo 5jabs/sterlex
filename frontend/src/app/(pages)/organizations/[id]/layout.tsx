@@ -53,6 +53,10 @@ export default function OrganizationSettingsLayout({
                   label: "Members",
               },
               {
+                  href: `/organizations/${organization.id}/projects`,
+                  label: "Projects",
+              },
+              {
                   href: `/organizations/${organization.id}/api-keys`,
                   label: "API Keys",
               },
@@ -110,6 +114,8 @@ export default function OrganizationSettingsLayout({
                                         pathname === tab.href ||
                                         (tab.href.endsWith("/members") &&
                                             pathname.endsWith("/members")) ||
+                                        (tab.href.endsWith("/projects") &&
+                                            pathname.endsWith("/projects")) ||
                                         (tab.href.endsWith("/api-keys") &&
                                             pathname.endsWith("/api-keys")) ||
                                         (tab.href.endsWith("/usage") &&

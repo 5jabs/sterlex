@@ -464,13 +464,89 @@ export interface ProjectPeople {
         email: string | null;
         display_name: string | null;
     };
-    members: { email: string; display_name: string | null }[];
+    members: {
+        user_id?: string;
+        email: string;
+        display_name: string | null;
+    }[];
+}
+
+export interface ProjectMember {
+    id: string;
+    project_id: string;
+    user_id: string;
+    role: "member";
+    email: string | null;
+    display_name: string | null;
+    created_at: string;
+}
+
+export interface ProjectAccessEvent {
+    id: string;
+    action: "member_added" | "member_removed";
+    created_at: string;
+    actor_user_id: string | null;
+    actor_display_name: string | null;
+    actor_email: string | null;
+    target_user_id: string | null;
+    target_email: string | null;
+    target_display_name: string | null;
+}
+
+export interface ProjectAccess {
+    project: {
+        id: string;
+        name: string;
+        organization_id: string | null;
+        is_owner: boolean;
+    };
+    owner: {
+        user_id: string;
+        email: string | null;
+        display_name: string | null;
+    };
+    members: ProjectMember[];
+    events: ProjectAccessEvent[];
+    organizationName: string | null;
+    orgAdminsCanAccessAll: boolean;
+    organizationMembers: Array<{
+        user_id: string;
+        email: string | null;
+        display_name: string | null;
+        role: string;
+    }>;
 }
 
 export async function getProjectPeople(
     projectId: string,
 ): Promise<ProjectPeople> {
     return apiRequest<ProjectPeople>(`/projects/${projectId}/people`);
+}
+
+export async function getProjectAccess(
+    projectId: string,
+): Promise<ProjectAccess> {
+    return apiRequest<ProjectAccess>(`/projects/${projectId}/access`);
+}
+
+export async function addProjectMember(
+    projectId: string,
+    payload: { user_id?: string; email?: string },
+): Promise<ProjectMember> {
+    return apiRequest<ProjectMember>(`/projects/${projectId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function removeProjectMember(
+    projectId: string,
+    memberUserId: string,
+): Promise<void> {
+    await apiRequest(`/projects/${projectId}/members/${memberUserId}`, {
+        method: "DELETE",
+    });
 }
 
 // ---------------------------------------------------------------------------

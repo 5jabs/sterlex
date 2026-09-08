@@ -334,6 +334,7 @@ export async function deleteUserAccountData(
             : Promise.resolve({ error: null }),
         db.from("workflows").delete().eq("user_id", userId),
         db.from("projects").delete().eq("user_id", userId),
+        db.from("project_members").delete().eq("user_id", userId),
     ];
 
     const results = await Promise.all(deletions);

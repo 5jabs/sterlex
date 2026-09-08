@@ -1,17 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, User, X } from "lucide-react";
 import {
     addDocumentToProject,
     createProject,
+    listOrganizationMembers,
     uploadProjectDocument,
+    type OrganizationMember,
+    type UserLookupResult,
 } from "@/app/lib/sterlexApi";
 import { useDirectoryData } from "../shared/useDirectoryData";
 import { FileDirectory } from "../shared/FileDirectory";
 import { AddUserInput } from "../shared/AddUserInput";
 import type { Project } from "../shared/types";
-import type { UserLookupResult } from "@/app/lib/sterlexApi";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { Modal } from "../modals/Modal";
@@ -31,6 +33,7 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
     const [cmNumber, setCmNumber] = useState("");
     const [practice, setPractice] = useState("");
     const [sharedUsers, setSharedUsers] = useState<UserLookupResult[]>([]);
+    const [orgMembers, setOrgMembers] = useState<OrganizationMember[]>([]);
     const [selectedDocIds, setSelectedDocIds] = useState<Set<string>>(new Set());
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
@@ -42,6 +45,24 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
     const formId = "new-project-modal-form";
 
     const { loading: dirLoading, standaloneDocuments, projects: dirProjects } = useDirectoryData(open);
+
+    useEffect(() => {
+        if (!open || !activeOrganizationId) {
+            setOrgMembers([]);
+            return;
+        }
+        let cancelled = false;
+        listOrganizationMembers(activeOrganizationId)
+            .then((members) => {
+                if (!cancelled) setOrgMembers(members);
+            })
+            .catch(() => {
+                if (!cancelled) setOrgMembers([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [open, activeOrganizationId]);
 
     if (!open) return null;
 
@@ -255,11 +276,78 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
                             <ModalFieldLabel as="p">
                                 Share with
                             </ModalFieldLabel>
+                            <p className="text-xs text-gray-500">
+                                {activeOrganizationId
+                                    ? "Only people in this organization can be added. They will not receive an email — they simply gain access to this matter."
+                                    : "Add existing Sterlex users. They will not receive an email."}
+                            </p>
                             <AddUserInput
                                 onAdd={handleAddShareUser}
                                 validateEmail={validateShareUser}
                                 placeholder="Add colleagues by email..."
                             />
+                            {activeOrganizationId &&
+                                orgMembers.filter(
+                                    (member) =>
+                                        member.user_id !== user?.id &&
+                                        !sharedUsers.some(
+                                            (entry) =>
+                                                entry.email ===
+                                                member.email?.trim().toLowerCase(),
+                                        ),
+                                ).length > 0 && (
+                                    <ul className="space-y-1 pt-1">
+                                        {orgMembers
+                                            .filter(
+                                                (member) =>
+                                                    member.user_id !== user?.id &&
+                                                    !sharedUsers.some(
+                                                        (entry) =>
+                                                            entry.email ===
+                                                            member.email
+                                                                ?.trim()
+                                                                .toLowerCase(),
+                                                    ),
+                                            )
+                                            .slice(0, 8)
+                                            .map((member) => (
+                                                <li
+                                                    key={member.user_id}
+                                                    className="flex items-center gap-2.5 rounded-lg px-2 py-1.5"
+                                                >
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-xs text-gray-800">
+                                                            {member.display_name ||
+                                                                member.email ||
+                                                                "Member"}
+                                                            {member.email && (
+                                                                <span className="text-gray-400">
+                                                                    {" "}
+                                                                    · {member.email}
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="text-xs text-gray-600 hover:text-gray-900"
+                                                        onClick={() => {
+                                                            if (!member.email)
+                                                                return;
+                                                            handleAddShareUser({
+                                                                email: member.email,
+                                                                display_name:
+                                                                    member.display_name,
+                                                                exists: true,
+                                                            });
+                                                        }}
+                                                    >
+                                                        Add
+                                                    </button>
+                                                </li>
+                                            ))}
+                                    </ul>
+                                )}
                             {sharedUsers.length > 0 && (
                                 <ul className="space-y-1 pt-1">
                                     {sharedUsers.map((entry) => {

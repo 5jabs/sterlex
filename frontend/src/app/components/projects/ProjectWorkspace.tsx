@@ -424,7 +424,12 @@ export function ProjectWorkspaceProvider({
                     onOpenDetails={() => setProjectDetailsOpen(true)}
                     onDeleteProject={requestProjectDelete}
                     onSearchChange={setSearch}
-                    onOpenPeople={() => setPeopleModalOpen(true)}
+                    onOpenPeople={() =>
+                        router.push(`/projects/${projectId}/access`)
+                    }
+                    onManageAccess={() =>
+                        router.push(`/projects/${projectId}/access`)
+                    }
                     onNewChat={() => void createChat()}
                     onNewReview={openNewReview}
                 />

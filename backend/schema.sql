@@ -318,6 +318,40 @@ create index if not exists idx_projects_organization
 create index if not exists projects_shared_with_idx
   on public.projects using gin (shared_with);
 
+create table if not exists public.project_members (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null default 'member'
+    check (role in ('member')),
+  added_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (project_id, user_id)
+);
+
+create index if not exists idx_project_members_user
+  on public.project_members (user_id);
+
+create index if not exists idx_project_members_project
+  on public.project_members (project_id);
+
+alter table public.project_members enable row level security;
+
+create table if not exists public.project_access_events (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  action text not null check (action in ('member_added', 'member_removed')),
+  target_user_id uuid references auth.users(id) on delete set null,
+  target_email text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_project_access_events_project_created
+  on public.project_access_events (project_id, created_at desc);
+
+alter table public.project_access_events enable row level security;
+
 create table if not exists public.llm_usage_events (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid references public.organizations(id) on delete cascade,
@@ -719,6 +753,7 @@ returns table (
   cm_number text,
   practice text,
   shared_with jsonb,
+  member_count integer,
   created_at timestamptz,
   updated_at timestamptz,
   is_owner boolean,
@@ -735,6 +770,12 @@ as $$
     select p.*
     from public.projects p
     where p.user_id = p_user_id
+       or exists (
+        select 1
+        from public.project_members pm
+        where pm.project_id = p.id
+          and pm.user_id::text = p_user_id
+      )
        or (
         coalesce(p_user_email, '') <> ''
         and p.user_id <> p_user_id
@@ -770,6 +811,12 @@ as $$
     from public.tabular_reviews tr
     where tr.project_id in (select vp.id from visible_projects vp)
     group by tr.project_id
+  ),
+  member_counts as (
+    select pm.project_id, count(*)::integer as member_count
+    from public.project_members pm
+    where pm.project_id in (select vp.id from visible_projects vp)
+    group by pm.project_id
   )
   select
     vp.id,
@@ -779,6 +826,7 @@ as $$
     vp.cm_number,
     vp.practice,
     vp.shared_with,
+    coalesce(mc.member_count, 0) as member_count,
     vp.created_at,
     vp.updated_at,
     vp.user_id = p_user_id as is_owner,
@@ -796,6 +844,8 @@ as $$
     on cc.project_id = vp.id
   left join review_counts rc
     on rc.project_id = vp.id
+  left join member_counts mc
+    on mc.project_id = vp.id
   order by vp.created_at desc;
 $$;
 
@@ -839,6 +889,12 @@ as $$
     select p.id
     from public.projects p
     where p.user_id = p_user_id
+       or exists (
+        select 1
+        from public.project_members pm
+        where pm.project_id = p.id
+          and pm.user_id::text = p_user_id
+      )
        or (
         coalesce(p_user_email, '') <> ''
         and p.user_id <> p_user_id
@@ -994,6 +1050,8 @@ alter table public.courtlistener_opinion_cluster_index enable row level security
 
 revoke all on public.user_profiles from anon, authenticated;
 revoke all on public.projects from anon, authenticated;
+revoke all on public.project_members from anon, authenticated;
+revoke all on public.project_access_events from anon, authenticated;
 revoke all on public.project_subfolders from anon, authenticated;
 revoke all on public.documents from anon, authenticated;
 revoke all on public.document_versions from anon, authenticated;

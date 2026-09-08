@@ -14,7 +14,14 @@ import {
 } from "../lib/storage";
 import { docxToPdf, convertedPdfKey } from "../lib/convert";
 import { checkProjectAccess } from "../lib/access";
-import { getMembership } from "../lib/organizations";
+import { getMembership, listOrganizationMembers } from "../lib/organizations";
+import {
+  addProjectMember,
+  listProjectAccessEvents,
+  listProjectMembers,
+  removeProjectMember,
+  replaceProjectMembersByEmails,
+} from "../lib/projectMembers";
 import { singleFileUpload } from "../lib/upload";
 import { deleteUserProjects } from "../lib/userDataCleanup";
 import {
@@ -27,6 +34,21 @@ import {
   findMissingUserEmails,
   loadProfileUsersByEmail,
 } from "../lib/userLookup";
+
+function memberErrorStatus(error: unknown) {
+  const status =
+    error && typeof error === "object" && "status" in error
+      ? Number((error as { status?: unknown }).status)
+      : NaN;
+  return Number.isFinite(status) && status >= 400 && status < 600
+    ? status
+    : 500;
+}
+
+function memberErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  return String(error);
+}
 
 export const projectsRouter = Router();
 
@@ -241,6 +263,24 @@ projectsRouter.post("/", requireAuth, async (req, res) => {
     .select("*")
     .single();
   if (error) return void res.status(500).json({ detail: error.message });
+  if (cleanedSharedWith.length > 0) {
+    try {
+      const emails = await replaceProjectMembersByEmails(db, {
+        projectId: data.id as string,
+        projectOwnerId: userId,
+        projectOrganizationId: organizationId,
+        actorUserId: userId,
+        emails: cleanedSharedWith,
+        actorEmail: userEmail,
+      });
+      data.shared_with = emails;
+    } catch (err) {
+      await db.from("projects").delete().eq("id", data.id);
+      return void res
+        .status(memberErrorStatus(err))
+        .json({ detail: memberErrorMessage(err) });
+    }
+  }
   res.status(201).json({ ...data, documents: [] });
 });
 
@@ -298,13 +338,8 @@ projectsRouter.get("/:projectId/people", requireAuth, async (req, res) => {
     return void res.status(404).json({ detail: "Project not found" });
   const project = access.project;
 
-  const sharedWith = (Array.isArray(project.shared_with)
-    ? (project.shared_with as string[])
-    : []
-  ).map((e) => e.toLowerCase());
-
   // Use the mirrored profile email so sharing checks do not scan auth.users.
-  const { userByEmail, userById } = await loadProfileUsersByEmail(db);
+  const { userById } = await loadProfileUsersByEmail(db);
 
   const ownerInfo = userById.get(project.user_id as string);
   const owner = {
@@ -312,14 +347,142 @@ projectsRouter.get("/:projectId/people", requireAuth, async (req, res) => {
     email: ownerInfo?.email ?? null,
     display_name: ownerInfo?.display_name ?? null,
   };
-  const members = sharedWith.map((email) => {
-    const u = userByEmail.get(email);
-    const display_name = u?.display_name ?? null;
-    return { email, display_name };
-  });
+  const members = (await listProjectMembers(db, projectId)).map((member) => ({
+    user_id: member.user_id,
+    email: member.email ?? "",
+    display_name: member.display_name,
+  }));
 
   res.json({ owner, members });
 });
+
+projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
+  const userId = res.locals.userId as string;
+  const userEmail = res.locals.userEmail as string | undefined;
+  const { projectId } = req.params;
+  const db = createServerSupabase();
+
+  const access = await checkProjectAccess(projectId, userId, userEmail, db);
+  if (!access.ok)
+    return void res.status(404).json({ detail: "Project not found" });
+  const project = access.project;
+  const { data: named } = await db
+    .from("projects")
+    .select("name")
+    .eq("id", projectId)
+    .maybeSingle();
+  const { userById } = await loadProfileUsersByEmail(db);
+  const ownerInfo = userById.get(project.user_id);
+  const members = await listProjectMembers(db, projectId);
+  const events = await listProjectAccessEvents(db, projectId);
+  let organizationName: string | null = null;
+  let orgAdminsCanAccessAll = false;
+  let organizationMembers: Awaited<
+    ReturnType<typeof listOrganizationMembers>
+  > = [];
+  if (project.organization_id) {
+    const { data: org } = await db
+      .from("organizations")
+      .select("name, admins_can_access_all_projects")
+      .eq("id", project.organization_id)
+      .maybeSingle();
+    organizationName = (org?.name as string | null) ?? null;
+    orgAdminsCanAccessAll = org?.admins_can_access_all_projects === true;
+    if (access.isOwner) {
+      organizationMembers = await listOrganizationMembers(
+        db,
+        project.organization_id,
+      );
+    }
+  }
+
+  res.json({
+    project: {
+      id: project.id,
+      name: (named?.name as string | null) ?? "Project",
+      organization_id: project.organization_id,
+      is_owner: access.isOwner,
+    },
+    owner: {
+      user_id: project.user_id,
+      email: ownerInfo?.email ?? null,
+      display_name: ownerInfo?.display_name ?? null,
+    },
+    members,
+    events,
+    organizationName,
+    orgAdminsCanAccessAll,
+    organizationMembers: organizationMembers
+      .filter((member) => member.user_id !== project.user_id)
+      .map((member) => ({
+        user_id: member.user_id,
+        email: member.email,
+        display_name: member.display_name,
+        role: member.role,
+      })),
+  });
+});
+
+projectsRouter.post("/:projectId/members", requireAuth, async (req, res) => {
+  const userId = res.locals.userId as string;
+  const userEmail = res.locals.userEmail as string | undefined;
+  const { projectId } = req.params;
+  const db = createServerSupabase();
+  const access = await checkProjectAccess(projectId, userId, userEmail, db);
+  if (!access.ok)
+    return void res.status(404).json({ detail: "Project not found" });
+  if (!access.isOwner) {
+    return void res.status(403).json({
+      detail: "Only the project owner can add people.",
+    });
+  }
+  try {
+    const member = await addProjectMember(db, {
+      projectId,
+      projectOwnerId: access.project.user_id,
+      projectOrganizationId: access.project.organization_id,
+      actorUserId: userId,
+      targetUserId:
+        typeof req.body?.user_id === "string" ? req.body.user_id : null,
+      email: typeof req.body?.email === "string" ? req.body.email : null,
+    });
+    res.status(201).json(member);
+  } catch (err) {
+    res.status(memberErrorStatus(err)).json({ detail: memberErrorMessage(err) });
+  }
+});
+
+projectsRouter.delete(
+  "/:projectId/members/:memberUserId",
+  requireAuth,
+  async (req, res) => {
+    const userId = res.locals.userId as string;
+    const userEmail = res.locals.userEmail as string | undefined;
+    const { projectId, memberUserId } = req.params;
+    const db = createServerSupabase();
+    const access = await checkProjectAccess(projectId, userId, userEmail, db);
+    if (!access.ok)
+      return void res.status(404).json({ detail: "Project not found" });
+    if (!access.isOwner && userId !== memberUserId) {
+      return void res.status(403).json({
+        detail: "Only the project owner can remove people.",
+      });
+    }
+    try {
+      await removeProjectMember(db, {
+        projectId,
+        projectOwnerId: access.project.user_id,
+        actorUserId: userId,
+        targetUserId: memberUserId,
+      });
+      res.status(204).send();
+    } catch (err) {
+      res
+        .status(memberErrorStatus(err))
+        .json({ detail: memberErrorMessage(err) });
+    }
+  },
+);
 
 // PATCH /projects/:projectId
 projectsRouter.patch("/:projectId", requireAuth, async (req, res) => {
@@ -332,36 +495,28 @@ projectsRouter.patch("/:projectId", requireAuth, async (req, res) => {
   if ("practice" in req.body) {
     updates.practice = normalizeOptionalString(req.body.practice);
   }
-  if (Array.isArray(req.body.shared_with)) {
-    // Normalise: lowercase + dedupe + drop empties.
-    const normalizedUserEmail = userEmail?.trim().toLowerCase();
-    const seen = new Set<string>();
-    const cleaned: string[] = [];
-    for (const raw of req.body.shared_with) {
-      if (typeof raw !== "string") continue;
-      const e = raw.trim().toLowerCase();
-      if (!e || seen.has(e)) continue;
-      if (normalizedUserEmail && e === normalizedUserEmail) {
-        return void res
-          .status(400)
-          .json({ detail: "You cannot share a project with yourself." });
-      }
-      seen.add(e);
-      cleaned.push(e);
-    }
-    updates.shared_with = cleaned;
-  }
 
   const db = createServerSupabase();
-  if (Array.isArray(updates.shared_with)) {
-    const missingSharedUsers = await findMissingUserEmails(
-      db,
-      updates.shared_with as string[],
-    );
-    if (missingSharedUsers.length > 0) {
-      return void res.status(400).json({
-        detail: `${missingSharedUsers[0]} does not belong to a Sterlex user.`,
+  if (Array.isArray(req.body.shared_with)) {
+    const access = await checkProjectAccess(projectId, userId, userEmail, db);
+    if (!access.ok || !access.isOwner) {
+      return void res.status(404).json({ detail: "Project not found" });
+    }
+    try {
+      updates.shared_with = await replaceProjectMembersByEmails(db, {
+        projectId,
+        projectOwnerId: access.project.user_id,
+        projectOrganizationId: access.project.organization_id,
+        actorUserId: userId,
+        emails: req.body.shared_with.filter(
+          (value: unknown) => typeof value === "string",
+        ),
+        actorEmail: userEmail,
       });
+    } catch (err) {
+      return void res
+        .status(memberErrorStatus(err))
+        .json({ detail: memberErrorMessage(err) });
     }
   }
 

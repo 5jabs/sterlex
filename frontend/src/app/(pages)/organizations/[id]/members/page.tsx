@@ -75,8 +75,9 @@ export default function OrganizationMembersPage() {
                 Members
             </h2>
             <p className="mb-4 text-sm text-gray-500">
-                Invite colleagues by email. They keep their own Sterlex login
-                and only see the projects you share with them.
+                Invite colleagues by email. They keep their own Sterlex login.
+                Being in the organization does not open every project — share
+                each matter from the project’s Access page.
             </p>
             {canManage && (
                 <AccountSection className="mb-8 space-y-3 p-4">
