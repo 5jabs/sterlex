@@ -1383,6 +1383,8 @@ export interface OrganizationUsage {
     >;
     monthlyBudgetUsd: number | null;
     budgetEnforcement: BudgetEnforcement;
+    overBudget: boolean;
+    remainingUsd: number | null;
 }
 
 export async function listOrganizations(): Promise<OrganizationsHome> {

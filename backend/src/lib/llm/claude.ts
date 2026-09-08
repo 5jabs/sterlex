@@ -3,12 +3,18 @@ import type { Tool } from "@anthropic-ai/sdk/resources/messages/messages";
 import type {
   StreamChatParams,
   StreamChatResult,
+  CompleteTextResult,
   NormalizedToolCall,
   NormalizedToolResult,
 } from "./types";
 import { toClaudeTools } from "./tools";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
 import { NotConnectedError } from "../notConnectedError";
+import {
+  addTokenUsage,
+  emptyTokenUsage,
+  tokenUsageFromClaude,
+} from "./tokenUsage";
 
 type ContentBlock =
   | { type: "text"; text: string }
@@ -121,6 +127,7 @@ export async function streamClaude(
 
   const messages: NativeMessage[] = toNativeMessages(params.messages);
   let fullText = "";
+  let usage = emptyTokenUsage();
   const rawStreamRecorder = createRawLlmStreamRecorder({
     provider: "claude",
     model,
@@ -212,6 +219,7 @@ export async function streamClaude(
       }
       if (sawThinking) callbacks.onReasoningBlockEnd?.();
       throwIfAborted(params.abortSignal);
+      usage = addTokenUsage(usage, tokenUsageFromClaude(final));
       const stopReason = final.stop_reason;
       const assistantBlocks = final.content as ContentBlock[];
 
@@ -260,7 +268,7 @@ export async function streamClaude(
     }
 
     await rawStreamRecorder?.flush("completed");
-    return { fullText };
+    return { fullText, usage };
   } catch (error) {
     await rawStreamRecorder?.flush("error", error);
     throw error;
@@ -273,7 +281,7 @@ export async function completeClaudeText(params: {
   user: string;
   maxTokens?: number;
   apiKeys?: { claude?: string | null };
-}): Promise<string> {
+}): Promise<CompleteTextResult> {
   const anthropic = client(params.apiKeys?.claude);
   let resp: Awaited<ReturnType<typeof anthropic.messages.create>>;
   try {
@@ -290,7 +298,7 @@ export async function completeClaudeText(params: {
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("");
-  return text;
+  return { text, usage: tokenUsageFromClaude(resp) };
 }
 
 // Helper re-export for callers wanting to hand normalized results back in.

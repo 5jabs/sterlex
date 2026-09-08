@@ -4,13 +4,17 @@ import {
     DEFAULT_TITLE_MODEL,
     DEFAULT_TABULAR_MODEL,
     OPENAI_LOW_MODELS,
-    type UserApiKeys,
-} from "./llm";
+} from "./llm/models";
+import type { UserApiKeys } from "./llm/types";
 import {
     envApiKeys,
     getStoredUserApiKeysOnly,
+    type ApiKeyProvider,
 } from "./userApiKeys";
-import { resolveApiKeys } from "./apiKeyResolution";
+import {
+    resolveApiKeys,
+    type ResolvedApiKeySource,
+} from "./apiKeyResolution";
 import {
     getOrganizationApiKeys,
     organizationEnvFallbackAllowed,
@@ -21,6 +25,8 @@ export type UserModelSettings = {
     tabular_model: string;
     legal_research_us: boolean;
     api_keys: UserApiKeys;
+    organizationId: string | null;
+    api_key_sources: Record<ApiKeyProvider, ResolvedApiKeySource>;
 };
 
 export type ModelSettingsOptions = {
@@ -84,6 +90,8 @@ export async function getUserModelSettings(
             (data as { legal_research_us?: boolean | null } | null)
                 ?.legal_research_us !== false,
         api_keys: resolved.keys,
+        organizationId,
+        api_key_sources: resolved.sources,
     };
 }
 

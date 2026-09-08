@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import type {
+  CompleteTextResult,
   StreamChatParams,
   StreamChatResult,
   NormalizedToolCall,
@@ -7,6 +8,12 @@ import type {
 import { toGeminiTools } from "./tools";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
 import { NotConnectedError } from "../notConnectedError";
+import {
+  addTokenUsage,
+  emptyTokenUsage,
+  hasTokenUsage,
+  tokenUsageFromGemini,
+} from "./tokenUsage";
 
 type GeminiPart = {
   text?: string;
@@ -177,6 +184,7 @@ export async function streamGemini(
 
   const contents: GeminiContent[] = toNativeContents(params.messages);
   let fullText = "";
+  let usage = emptyTokenUsage();
   const rawStreamRecorder = createRawLlmStreamRecorder({
     provider: "gemini",
     model,
@@ -213,6 +221,7 @@ export async function streamGemini(
       const callParts: GeminiPart[] = [];
       const toolCalls: NormalizedToolCall[] = [];
       let sawThinking = false;
+      let iterationUsage = emptyTokenUsage();
       const iterator = stream[Symbol.asyncIterator]();
       let rejectAbort: ((reason?: unknown) => void) | null = null;
       const abortPromise = new Promise<never>((_, reject) => {
@@ -245,6 +254,9 @@ export async function streamGemini(
           });
           const failureMessage = geminiStreamFailureMessage(chunk);
           if (failureMessage) throw new Error(failureMessage);
+
+          const chunkUsage = tokenUsageFromGemini(chunk);
+          if (hasTokenUsage(chunkUsage)) iterationUsage = chunkUsage;
 
           const parts =
             (chunk as { candidates?: { content?: { parts?: GeminiPart[] } }[] })
@@ -288,6 +300,7 @@ export async function streamGemini(
 
       if (sawThinking) callbacks.onReasoningBlockEnd?.();
       throwIfAborted(params.abortSignal);
+      usage = addTokenUsage(usage, iterationUsage);
 
       fullText += textParts.join("");
 
@@ -323,7 +336,7 @@ export async function streamGemini(
     }
 
     await rawStreamRecorder?.flush("completed");
-    return { fullText };
+    return { fullText, usage };
   } catch (error) {
     await rawStreamRecorder?.flush("error", error);
     throw error;
@@ -335,7 +348,7 @@ export async function completeGeminiText(params: {
   systemPrompt?: string;
   user: string;
   apiKeys?: { gemini?: string | null };
-}): Promise<string> {
+}): Promise<CompleteTextResult> {
   const ai = client(params.apiKeys?.gemini);
   let resp: Awaited<ReturnType<typeof ai.models.generateContent>>;
   try {
@@ -349,5 +362,8 @@ export async function completeGeminiText(params: {
   } catch (error) {
     throw new Error(geminiErrorMessage(error));
   }
-  return resp.text ?? "";
+  return {
+    text: resp.text ?? "",
+    usage: tokenUsageFromGemini(resp),
+  };
 }
