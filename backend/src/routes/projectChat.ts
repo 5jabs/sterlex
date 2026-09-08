@@ -24,6 +24,7 @@ import {
 } from "../lib/userSettings";
 import { checkProjectAccess } from "../lib/access";
 import { safeErrorLog, safeErrorMessage } from "../lib/safeError";
+import { meteringFromSettings, tryOrgBudgetGuard } from "../lib/llmUsage";
 
 const PROJECT_SYSTEM_PROMPT_EXTRA = `PROJECT CONTEXT:
 You are operating within a project folder that contains a collection of legal documents the user has organised for a single matter. The user's questions will usually refer to one or more documents in this project — your job is to find the relevant files to work on. Use list_documents to see what is available and fetch_documents / read_document to pull in any documents you need before answering.
@@ -71,6 +72,21 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
     );
     if (!projectAccess.ok)
         return void res.status(404).json({ detail: "Project not found" });
+
+    const settings = await getUserModelSettings(userId, db, { projectId });
+    const apiKeys = settings.api_keys;
+    const legalResearchUs = settings.legal_research_us;
+    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        return;
+    }
+    const metering = meteringFromSettings({
+        db,
+        userId,
+        projectId,
+        organizationId: settings.organizationId,
+        model,
+        apiKeySources: settings.api_key_sources,
+    });
 
     let chatId = chat_id ?? null;
     let chatTitle: string | null = null;
@@ -172,10 +188,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         systemPromptExtra += `\n\nUSER-ATTACHED DOCUMENTS FOR THIS TURN:\nThe user has attached the following document(s) directly to their latest message. Treat these as the primary focus of the request unless their message clearly says otherwise.\n${lines.join("\n")}`;
     }
 
-    const {
-        api_keys: apiKeys,
-        legal_research_us: legalResearchUs,
-    } = await getUserModelSettings(userId, db, { projectId });
     const apiMessages = buildMessages(
         messagesForLLM,
         docAvailability,
@@ -216,6 +228,7 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             apiKeys,
             signal: streamAbort.signal,
             projectId,
+            metering,
         });
 
         const persistedEvents = stripTransientAssistantEvents(events);

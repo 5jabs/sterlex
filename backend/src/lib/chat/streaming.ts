@@ -42,6 +42,11 @@ import {
   type TurnReadState,
 } from "./tools/documentOps";
 import { NotConnectedError, type NotConnectedProvider } from "../notConnectedError";
+import type { LlmMetering } from "../llmUsage";
+import {
+  OrganizationBudgetExceededError,
+  assertOrganizationBudgetAllowed,
+} from "../llmUsage";
 
 
 export type AssistantEvent =
@@ -189,6 +194,7 @@ export async function runLLMStream(params: {
    * generated docs still get persisted, but as standalone documents.
    */
   projectId?: string | null;
+  metering?: LlmMetering | null;
 }): Promise<{
   fullText: string;
   events: AssistantEvent[];
@@ -210,6 +216,7 @@ export async function runLLMStream(params: {
     apiKeys,
     signal,
     projectId,
+    metering,
   } = params;
   const researchTools = includeResearchTools ? COURTLISTENER_TOOLS : [];
   const mcpTools = await buildUserMcpTools(userId, db);
@@ -358,6 +365,21 @@ export async function runLLMStream(params: {
 
   try {
     throwIfAborted(signal);
+    if (metering?.organizationId) {
+      const budget = await assertOrganizationBudgetAllowed(
+        metering.db,
+        metering.organizationId,
+      );
+      if (budget.warning) {
+        write(
+          `data: ${JSON.stringify({
+            type: "budget_warning",
+            estimatedCostUsd: budget.estimatedCostUsd,
+            monthlyBudgetUsd: budget.monthlyBudgetUsd,
+          })}\n\n`,
+        );
+      }
+    }
     await streamChatWithTools({
       model: selectedModel,
       systemPrompt,
@@ -367,6 +389,7 @@ export async function runLLMStream(params: {
       apiKeys,
       enableThinking: true,
       abortSignal: signal,
+      metering,
       callbacks: {
         onContentDelta: (delta) => {
           iterText += delta;
@@ -552,6 +575,10 @@ export async function runLLMStream(params: {
         fullText,
         events,
       );
+    } else if (err instanceof OrganizationBudgetExceededError) {
+      flushPartialTurn();
+      events.push({ type: "error", message: err.message });
+      throw new AssistantStreamError(err.message, fullText, events);
     } else {
       flushPartialTurn();
       const message = safeErrorMessage(err, "Stream error");

@@ -369,7 +369,23 @@ export function useAssistantChat({
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errText}`);
+        let message = `HTTP ${response.status}: ${errText}`;
+        try {
+          const parsed = JSON.parse(errText) as {
+            code?: unknown;
+            detail?: unknown;
+          };
+          if (
+            parsed.code === "org_budget_exceeded" &&
+            typeof parsed.detail === "string" &&
+            parsed.detail.trim()
+          ) {
+            message = parsed.detail.trim();
+          }
+        } catch {
+          /* keep the HTTP status fallback */
+        }
+        throw new Error(message);
       }
 
       const reader = response.body?.getReader();
@@ -453,6 +469,10 @@ export function useAssistantChat({
               }));
               setIsResponseLoading(false);
               setIsLoadingCitations(false);
+              continue;
+            }
+
+            if (data.type === "budget_warning") {
               continue;
             }
 

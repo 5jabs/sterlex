@@ -37,7 +37,10 @@ import {
     hasEnvApiKey,
     normalizeApiKeyProvider,
 } from "../lib/userApiKeys";
-import { summarizeOrganizationUsage } from "../lib/llmUsage";
+import {
+    summarizeOrganizationUsage,
+    withBudgetFields,
+} from "../lib/llmUsage";
 
 export const organizationsRouter = Router();
 
@@ -538,14 +541,17 @@ organizationsRouter.get(
                 res.locals.userId as string,
             );
             const usage = await summarizeOrganizationUsage(db, organization.id);
-            res.json({
-                ...usage,
-                monthlyBudgetUsd:
-                    organization.monthly_budget_usd == null
-                        ? null
-                        : Number(organization.monthly_budget_usd),
-                budgetEnforcement: organization.budget_enforcement,
-            });
+            const monthlyBudgetUsd =
+                organization.monthly_budget_usd == null
+                    ? null
+                    : Number(organization.monthly_budget_usd);
+            res.json(
+                withBudgetFields(
+                    usage,
+                    monthlyBudgetUsd,
+                    organization.budget_enforcement,
+                ),
+            );
         } catch (err) {
             res.status(errorStatus(err)).json({ detail: errorMessage(err) });
         }

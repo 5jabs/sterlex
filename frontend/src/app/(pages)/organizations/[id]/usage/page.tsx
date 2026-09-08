@@ -27,6 +27,16 @@ export default function OrganizationUsagePage() {
             .catch((err) => setError((err as Error).message));
     }, [organization.id]);
 
+    const enforcement =
+        usage?.budgetEnforcement ?? organization.budget_enforcement;
+    const overBudget = usage?.overBudget === true;
+    const banner =
+        overBudget && enforcement === "hard"
+            ? "This organization has reached its monthly budget. New LLM requests are blocked until next month or the cap is raised."
+            : overBudget && enforcement === "soft"
+              ? "This organization has reached its monthly budget. Requests still go through, but estimated spend is over the cap."
+              : null;
+
     return (
         <div>
             <h2 className="mb-3 font-serif text-2xl font-medium text-gray-900">
@@ -36,6 +46,17 @@ export default function OrganizationUsagePage() {
                 Internal estimates from calls the app makes with organization
                 keys. This is not the OpenAI/Anthropic/Gemini invoice.
             </p>
+            {banner && (
+                <div
+                    className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+                        enforcement === "hard"
+                            ? "border-red-200 bg-red-50 text-red-800"
+                            : "border-amber-200 bg-amber-50 text-amber-900"
+                    }`}
+                >
+                    {banner}
+                </div>
+            )}
             <AccountSection className="space-y-4 p-4">
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <Stat
@@ -51,6 +72,18 @@ export default function OrganizationUsagePage() {
                         }
                     />
                     <Stat
+                        label="Remaining"
+                        value={
+                            usage?.remainingUsd == null
+                                ? "—"
+                                : money(usage.remainingUsd)
+                        }
+                    />
+                    <Stat
+                        label="Events"
+                        value={(usage?.eventCount ?? 0).toLocaleString()}
+                    />
+                    <Stat
                         label="Input tokens"
                         value={(usage?.inputTokens ?? 0).toLocaleString()}
                     />
@@ -60,10 +93,8 @@ export default function OrganizationUsagePage() {
                     />
                 </div>
                 <p className="text-xs text-gray-500">
-                    {usage?.eventCount ?? 0} recorded events this UTC month.
-                    Enforcement is {usage?.budgetEnforcement ?? organization.budget_enforcement}.
-                    Token logging from LLM adapters is the next step before hard
-                    caps can block requests.
+                    Totals cover this UTC month. Enforcement is {enforcement}.
+                    Token counts come from provider usage on each LLM call.
                 </p>
             </AccountSection>
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}

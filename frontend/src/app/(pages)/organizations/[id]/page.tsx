@@ -154,9 +154,9 @@ export default function OrganizationGeneralPage() {
                         <option value="hard">Hard — block new LLM calls</option>
                     </select>
                     <p className="mt-2 text-xs text-gray-500">
-                        Estimates are based on tokens the app records. They are
-                        not the provider invoice. Hard blocking lands once usage
-                        capture is wired into LLM adapters.
+                        Estimates use tokens recorded from app LLM calls, not
+                        the provider invoice. Soft warns on the usage page;
+                        hard returns HTTP 402 and blocks new calls.
                     </p>
                 </div>
                 {manage && (

@@ -1,4 +1,5 @@
 import type {
+  CompleteTextResult,
   LlmMessage,
   NormalizedToolCall,
   NormalizedToolResult,
@@ -8,6 +9,12 @@ import type {
 } from "./types";
 import { createRawLlmStreamRecorder, logRawLlmStream } from "./rawStreamLog";
 import { NotConnectedError } from "../notConnectedError";
+import {
+  addTokenUsage,
+  emptyTokenUsage,
+  hasTokenUsage,
+  tokenUsageFromOpenAI,
+} from "./tokenUsage";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MAX_OUTPUT_TOKENS = 16384;
@@ -44,11 +51,19 @@ type ResponseFunctionCallItem = {
 type ResponseStreamEvent = {
   type?: string;
   delta?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   response?: {
     id?: string;
     output_text?: string;
     status?: string;
     error?: { code?: string; message?: string } | null;
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+    };
   };
   error?: { code?: string; message?: string } | null;
   item?: ResponseFunctionCallItem;
@@ -224,6 +239,7 @@ export async function streamOpenAI(
   let input = toResponseInput(params.messages);
   let previousResponseId: string | undefined;
   let fullText = "";
+  let usage = emptyTokenUsage();
   let needsCourtlistenerCitationReminder = false;
   const rawStreamRecorder = createRawLlmStreamRecorder({
     provider: "openai",
@@ -255,6 +271,7 @@ export async function streamOpenAI(
       const startedToolCallIds = new Set<string>();
       let buffer = "";
       let sawReasoning = false;
+      let iterationUsage = emptyTokenUsage();
 
       while (true) {
         throwIfAborted(params.abortSignal);
@@ -301,6 +318,11 @@ export async function streamOpenAI(
             previousResponseId = event.response.id;
           }
 
+          const eventUsage = tokenUsageFromOpenAI(event);
+          if (hasTokenUsage(eventUsage)) {
+            iterationUsage = eventUsage;
+          }
+
           if (
             event.type === "response.reasoning_summary_text.delta" &&
             typeof event.delta === "string"
@@ -341,6 +363,7 @@ export async function streamOpenAI(
 
       if (sawReasoning) callbacks.onReasoningBlockEnd?.();
       throwIfAborted(params.abortSignal);
+      usage = addTokenUsage(usage, iterationUsage);
 
       if (!toolCalls.length || !runTools) {
         break;
@@ -360,7 +383,7 @@ export async function streamOpenAI(
     }
 
     await rawStreamRecorder?.flush("completed");
-    return { fullText };
+    return { fullText, usage };
   } catch (error) {
     await rawStreamRecorder?.flush("error", error);
     throw error;
@@ -373,7 +396,7 @@ export async function completeOpenAIText(params: {
   user: string;
   maxTokens?: number;
   apiKeys?: { openai?: string | null };
-}): Promise<string> {
+}): Promise<CompleteTextResult> {
   const response = await createResponse({
     model: params.model,
     instructions: params.systemPrompt,
@@ -383,20 +406,21 @@ export async function completeOpenAIText(params: {
   });
   const json = (await response.json()) as {
     output_text?: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
     output?: {
       content?: { type?: string; text?: string }[];
     }[];
   };
-
-  if (typeof json.output_text === "string") return json.output_text;
-
-  return (
-    json.output
-      ?.flatMap((item) => item.content ?? [])
-      .filter((content) => content.type === "output_text")
-      .map((content) => content.text ?? "")
-      .join("") ?? ""
-  );
+  const usage = tokenUsageFromOpenAI(json);
+  const text =
+    typeof json.output_text === "string"
+      ? json.output_text
+      : (json.output
+          ?.flatMap((item) => item.content ?? [])
+          .filter((content) => content.type === "output_text")
+          .map((content) => content.text ?? "")
+          .join("") ?? "");
+  return { text, usage };
 }
 
 export type { NormalizedToolResult };
