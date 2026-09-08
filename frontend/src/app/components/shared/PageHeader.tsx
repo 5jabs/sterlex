@@ -123,7 +123,7 @@ export function PageHeader({
                 className,
             )}
         >
-            {headerContent}
+            <div className="min-w-0 flex-1">{headerContent}</div>
             {hasActions && (
                 <div className="ml-4 hidden shrink-0 items-center gap-3 md:flex">
                     <PageHeaderActionGroups
@@ -135,7 +135,7 @@ export function PageHeader({
             {hasActions &&
                 mobileActionsContainer &&
                 createPortal(
-                    <div className="flex min-w-0 items-center justify-end gap-2 overflow-x-auto py-2 -my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2">
                         <PageHeaderActionGroups
                             groupedActionItems={groupedActionItems}
                             actionsDisabled={actionsDisabled}
@@ -370,7 +370,7 @@ function PageHeaderSearchActionControl({
                             className:
                                 "cursor-text justify-start gap-2 px-3 text-gray-700 hover:text-gray-700",
                         }),
-                        "w-40 bg-gray-100 sm:w-56 md:w-80",
+                        "w-[min(12rem,calc(100vw-8rem))] bg-gray-100 sm:w-56 md:w-80",
                     )}
                 >
                     <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -422,9 +422,7 @@ function pageHeaderActionControlClassName({
 }: PageHeaderActionControlClassNameOptions = {}) {
     return cn(
         "flex h-9 items-center justify-center rounded-full text-sm transition-colors hover:bg-gray-100 active:bg-gray-100 disabled:cursor-default disabled:text-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-300 md:h-7",
-        iconOnly
-            ? "w-9 md:w-7"
-            : "w-9 gap-1.5 px-0 sm:w-auto sm:px-3 md:w-7",
+        iconOnly ? "w-9 md:w-7" : "w-auto gap-1.5 px-2.5 md:px-3",
         disabled ? "cursor-default" : "cursor-pointer",
         "hover:bg-gray-100 active:bg-gray-100",
         variant === "danger"

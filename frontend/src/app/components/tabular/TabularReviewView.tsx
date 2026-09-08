@@ -803,11 +803,7 @@ export function TRView({ reviewId, projectId }: Props) {
                                     ) : (
                                         <MessageSquare className="h-4 w-4" />
                                     ),
-                                    label: (
-                                        <span className="hidden sm:inline">
-                                            Assistant
-                                        </span>
-                                    ),
+                                    label: "Assistant",
                                 },
                                 {
                                     onClick: handleGenerate,
@@ -821,11 +817,7 @@ export function TRView({ reviewId, projectId }: Props) {
                                     ) : (
                                         <Play className="h-4 w-4" />
                                     ),
-                                    label: (
-                                        <span className="hidden sm:inline">
-                                            {generating ? "Running…" : "Run"}
-                                        </span>
-                                    ),
+                                    label: generating ? "Running…" : "Run",
                                 },
                             ],
                         },
@@ -838,7 +830,7 @@ export function TRView({ reviewId, projectId }: Props) {
                     active="table"
                     onChange={() => undefined}
                     actions={
-                        <div className="ml-auto flex items-center gap-3 md:gap-5">
+                        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1 md:gap-5">
                             {loading ? (
                                 <>
                                     <div className="h-3 w-24 rounded bg-gray-100 animate-pulse" />
@@ -886,7 +878,10 @@ export function TRView({ reviewId, projectId }: Props) {
                                         }`}
                                     >
                                         <Upload className="h-3.5 w-3.5" />
-                                        Add Documents
+                                        <span className="md:hidden">Docs</span>
+                                        <span className="hidden md:inline">
+                                            Add Documents
+                                        </span>
                                     </button>
                                     <button
                                         onClick={() => setAddColOpen(true)}
@@ -900,7 +895,12 @@ export function TRView({ reviewId, projectId }: Props) {
                                         }`}
                                     >
                                         <Plus className="h-3.5 w-3.5" />
-                                        Add Columns
+                                        <span className="md:hidden">
+                                            Columns
+                                        </span>
+                                        <span className="hidden md:inline">
+                                            Add Columns
+                                        </span>
                                     </button>
                                 </>
                             )}

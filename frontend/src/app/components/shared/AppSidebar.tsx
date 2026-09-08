@@ -160,9 +160,9 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             <div
                 className={cn(
                     isOpen
-                        ? "w-64 h-[calc(100dvh-1rem)] md:h-[calc(100dvh-1.5rem)] bg-white/65"
+                        ? "w-64 h-[calc(100dvh-1rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-1.5rem)] bg-white/65"
                         : "max-md:hidden w-14 md:h-[calc(100dvh-1.5rem)] md:bg-white/65 h-auto bg-transparent pointer-events-none md:pointer-events-auto",
-                    "my-2 ml-2 mr-0 md:my-3 md:ml-3 md:mr-0 rounded-2xl border border-white/70 shadow-[0_-1px_6px_rgba(15,23,42,0.034),0_4px_9px_rgba(15,23,42,0.074),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-2xl overflow-visible",
+                    "ml-2 mr-0 mt-[max(0.5rem,env(safe-area-inset-top))] mb-[max(0.5rem,env(safe-area-inset-bottom))] md:my-3 md:ml-3 md:mr-0 rounded-2xl border border-white/70 shadow-[0_-1px_6px_rgba(15,23,42,0.034),0_4px_9px_rgba(15,23,42,0.074),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-2xl overflow-visible",
                     "flex flex-col transition-all duration-300 fixed md:relative z-[99]",
                 )}
             >

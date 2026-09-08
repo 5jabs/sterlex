@@ -172,7 +172,7 @@ export function WorkspacePicker() {
                 </p>
             </header>
 
-            <div className="mx-auto flex w-full max-w-6xl snap-x snap-mandatory gap-8 overflow-x-auto px-2 pb-4 [scrollbar-width:none] md:flex-wrap md:justify-center md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
+            <div className="mx-auto flex w-full max-w-6xl flex-wrap justify-center gap-6 px-2 pb-4 md:gap-8 md:px-0">
                 <ProfileTile
                     name={personalName}
                     caption={
@@ -355,9 +355,9 @@ function PickerShell({
     enteringName?: string | null;
 }) {
     return (
-        <div className="relative min-h-dvh overflow-hidden bg-[#f4f2ed]">
+        <div className="relative min-h-dvh overflow-x-hidden overflow-y-auto bg-[#f4f2ed]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.9),transparent_42%),radial-gradient(circle_at_80%_100%,rgba(92,74,58,0.08),transparent_36%)]" />
-            <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-16 md:px-8">
+            <div className="relative flex min-h-dvh flex-col items-center justify-center px-4 py-16 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(4rem,env(safe-area-inset-bottom))] md:px-8">
                 {children ?? (
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
                 )}
@@ -401,7 +401,7 @@ function ProfileTile({
             onMouseEnter={onFocus}
             disabled={busy}
             style={{ animationDelay: `${120 + delay * 70}ms` }}
-            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-40"
+            className="workspace-tile group flex w-[7.5rem] shrink-0 flex-col items-center md:w-40"
         >
             <div
                 className={cn(
@@ -441,7 +441,7 @@ function AddTile({
             onFocus={onFocus}
             onMouseEnter={onFocus}
             style={{ animationDelay: `${120 + delay * 70}ms` }}
-            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-40"
+            className="workspace-tile group flex w-[7.5rem] shrink-0 flex-col items-center md:w-40"
         >
             <div
                 className={cn(

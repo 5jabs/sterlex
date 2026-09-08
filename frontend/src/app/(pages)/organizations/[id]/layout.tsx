@@ -7,6 +7,7 @@ import { getOrganization, type Organization } from "@/app/lib/sterlexApi";
 import { accountTabButtonClassName } from "@/app/(pages)/account/accountStyles";
 import { OrganizationSettingsContext } from "./OrganizationSettingsContext";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { HorizontalTabScroller } from "@/app/components/shared/HorizontalTabScroller";
 
 export default function OrganizationSettingsLayout({
     params,
@@ -142,7 +143,8 @@ export default function OrganizationSettingsLayout({
                             aria-label="Organization"
                             className="z-10 -ml-3 min-w-0 self-start md:sticky md:top-4"
                         >
-                            <ul className="mb-0 flex gap-1 md:flex-col">
+                            <HorizontalTabScroller>
+                            <ul className="mb-0 flex flex-nowrap gap-1 md:flex-col">
                                 {tabs.map((tab) => {
                                     const isActive =
                                         tab.match === "exact"
@@ -169,6 +171,7 @@ export default function OrganizationSettingsLayout({
                                     );
                                 })}
                             </ul>
+                            </HorizontalTabScroller>
                         </nav>
                         <div className="min-w-0 outline-none">{children}</div>
                     </div>

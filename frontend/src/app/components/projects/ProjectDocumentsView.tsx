@@ -1960,6 +1960,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
                 className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors disabled:cursor-default disabled:text-gray-300 disabled:hover:text-gray-300"
             >
                 <FolderPlus className="h-3.5 w-3.5" />
+                <span className="sm:hidden">Folder</span>
                 <span className="hidden sm:inline">Add Subfolder</span>
             </button>
             <button
@@ -1968,6 +1969,7 @@ export function ProjectDocumentsView({ projectId }: Props) {
                 className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors disabled:cursor-default disabled:text-gray-300 disabled:hover:text-gray-300"
             >
                 <Upload className="h-3.5 w-3.5" />
+                <span className="sm:hidden">Docs</span>
                 <span className="hidden sm:inline">Add Documents</span>
             </button>
         </div>
