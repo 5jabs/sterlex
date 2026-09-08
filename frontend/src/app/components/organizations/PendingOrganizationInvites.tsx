@@ -13,7 +13,7 @@ export function PendingOrganizationInvites({
 }: {
     compact?: boolean;
 }) {
-    const { pendingInvites, reload, switchOrganization } = useOrganization();
+    const { pendingInvites, reload, enterWorkspace } = useOrganization();
     const router = useRouter();
     const [busyId, setBusyId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -25,9 +25,9 @@ export function PendingOrganizationInvites({
         setError(null);
         try {
             await acceptPendingOrganizationInvite(inviteId);
-            await switchOrganization(organizationId);
             await reload();
-            router.push(`/organizations/${organizationId}`);
+            await enterWorkspace(organizationId);
+            router.push("/projects");
         } catch (err) {
             setError((err as Error).message);
         } finally {

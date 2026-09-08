@@ -11,6 +11,7 @@ import {
     User,
     ChevronsUpDown,
     ChevronDown,
+    Building2,
 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
@@ -20,7 +21,7 @@ import Link from "next/link";
 import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
 import { listProjects } from "@/app/lib/sterlexApi";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
-import { WorkspaceSwitcher } from "@/app/components/organizations/WorkspaceSwitcher";
+import { WorkspaceIdentity } from "@/app/components/organizations/WorkspaceIdentity";
 import type { Project } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
 import { isMobileViewport } from "@/app/hooks/useIsMobile";
@@ -40,7 +41,11 @@ interface AppSidebarProps {
 export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     const { user } = useAuth();
     const { profile } = useUserProfile();
-    const { activeOrganizationId, loading: orgLoading } = useOrganization();
+    const {
+        activeOrganizationId,
+        activeOrganization,
+        loading: orgLoading,
+    } = useOrganization();
     const { chats, hasMoreChats, loadMoreChats, setCurrentChatId } =
         useChatHistoryContext();
     const router = useRouter();
@@ -161,39 +166,46 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                     "flex flex-col transition-all duration-300 fixed md:relative z-[99]",
                 )}
             >
-                {/* Toggle + Logo */}
+                {/* Toggle + Logo + workspace */}
                 <div
-                    className={`items-center justify-between px-3 py-4 ${
+                    className={`flex-col px-3 pb-2 pt-4 ${
                         !isOpen ? "hidden md:flex" : "flex"
                     }`}
                 >
-                    {isOpen && (
-                        <div className="px-2">
-                            <Link
-                                href="/assistant"
-                                onClick={closeIfMobile}
-                                className="flex items-center hover:opacity-80 transition-opacity"
-                            >
-                                <span
-                                    className={`font-bitter font-medium text-burgundy-600 text-2xl ${
-                                        shouldAnimate ? "sidebar-fade-in" : ""
-                                    }`}
+                    <div className="flex items-center justify-between">
+                        {isOpen && (
+                            <div className="px-2">
+                                <Link
+                                    href="/projects"
+                                    onClick={closeIfMobile}
+                                    className="flex items-center hover:opacity-80 transition-opacity"
                                 >
-                                    Sterlex
-                                </span>
-                            </Link>
-                        </div>
-                    )}
-                    <button
-                        onClick={handleToggle}
-                        className={cn(
-                            "h-10 w-10 p-2.5 items-center flex transition-colors",
-                            "rounded-md hover:bg-gray-100",
+                                    <span
+                                        className={`font-bitter font-medium text-burgundy-600 text-2xl ${
+                                            shouldAnimate ? "sidebar-fade-in" : ""
+                                        }`}
+                                    >
+                                        Sterlex
+                                    </span>
+                                </Link>
+                            </div>
                         )}
-                        title={isOpen ? "Close sidebar" : "Open sidebar"}
-                    >
-                        <PanelLeft className="h-4 w-4" />
-                    </button>
+                        <button
+                            onClick={handleToggle}
+                            className={cn(
+                                "h-10 w-10 p-2.5 items-center flex transition-colors",
+                                "rounded-md hover:bg-gray-100",
+                            )}
+                            title={isOpen ? "Close sidebar" : "Open sidebar"}
+                        >
+                            <PanelLeft className="h-4 w-4" />
+                        </button>
+                    </div>
+                    {isOpen ? (
+                        <WorkspaceIdentity />
+                    ) : (
+                        <WorkspaceIdentity collapsed />
+                    )}
                 </div>
 
                 {/* Nav items */}
@@ -243,6 +255,44 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                         </div>
                     );
                 })}
+
+                {activeOrganization && (
+                    <div className="py-1 px-3">
+                        <button
+                            onClick={() => {
+                                router.push(
+                                    `/organizations/${activeOrganization.id}`,
+                                );
+                                closeIfMobile();
+                            }}
+                            title={!isOpen ? "Organization" : ""}
+                            className={cn(
+                                "w-full h-11 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
+                                pathname.startsWith(
+                                    `/organizations/${activeOrganization.id}`,
+                                )
+                                    ? "bg-gray-200/60 text-gray-900"
+                                    : "text-gray-700 hover:bg-gray-100",
+                                !isOpen ? "hidden md:flex" : "flex",
+                            )}
+                        >
+                            <Building2
+                                className={`h-4 w-4 flex-shrink-0 ${
+                                    pathname.startsWith(
+                                        `/organizations/${activeOrganization.id}`,
+                                    )
+                                        ? "text-gray-900"
+                                        : "text-black"
+                                }`}
+                            />
+                            {isOpen && (
+                                <span className="text-sm font-medium">
+                                    Organization
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {isOpen && (
                     <div className="mt-4 flex-1 min-h-0 flex flex-col gap-4">
@@ -445,9 +495,6 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                         </div>
                     </div>
                 )}
-
-                {/* Workspace switcher */}
-                <WorkspaceSwitcher collapsed={!isOpen} />
 
                 {/* User Profile */}
                 <div className="mt-auto p-1">

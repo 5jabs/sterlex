@@ -11,7 +11,7 @@ export function HomeGate() {
 
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
-            router.replace("/assistant");
+            router.replace("/workspaces");
         }
     }, [authLoading, isAuthenticated, router]);
 

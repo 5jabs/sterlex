@@ -24,7 +24,7 @@ const canManage = (role: string) => role === "owner" || role === "admin";
 
 export default function OrganizationSettingsPage() {
     const { organization, setOrganization } = useOrganizationSettings();
-    const { reload, switchOrganization } = useOrganization();
+    const { reload, leaveWorkspace } = useOrganization();
     const router = useRouter();
     const [name, setName] = useState(organization.name);
     const [budget, setBudget] = useState(
@@ -76,9 +76,9 @@ export default function OrganizationSettingsPage() {
     async function handleDelete() {
         try {
             await deleteOrganization(organization.id);
-            await switchOrganization(null);
+            leaveWorkspace();
             await reload();
-            router.push("/projects");
+            router.push("/workspaces");
         } catch (err) {
             setError((err as Error).message);
             setDeleteOpen(false);

@@ -211,8 +211,8 @@ export default function VerifyMfaPage() {
 
 function safeNextPath(value: string | null) {
     if (!value || !value.startsWith("/") || value.startsWith("//")) {
-        return "/assistant";
+        return "/workspaces";
     }
-    if (value.startsWith("/verify-mfa")) return "/assistant";
+    if (value.startsWith("/verify-mfa")) return "/workspaces";
     return value;
 }

@@ -17,6 +17,14 @@ import {
     type Organization,
     type OrganizationsHome,
 } from "@/app/lib/sterlexApi";
+import {
+    PERSONAL_WORKSPACE_ID,
+    clearWorkspaceSession,
+    readWorkspaceSession,
+    toWorkspaceSessionId,
+    writeWorkspaceSession,
+    type WorkspaceSessionId,
+} from "@/app/lib/workspaceSession";
 
 type OrganizationContextValue = {
     organizations: Organization[];
@@ -24,9 +32,14 @@ type OrganizationContextValue = {
     activeOrganizationId: string | null;
     pendingInvites: OrganizationsHome["pendingInvites"];
     loading: boolean;
+    sessionHydrated: boolean;
+    hasEnteredWorkspace: boolean;
+    enteredWorkspaceId: WorkspaceSessionId | null;
     reload: () => Promise<void>;
     switchOrganization: (organizationId: string | null) => Promise<void>;
     createOrganization: (name: string) => Promise<Organization>;
+    enterWorkspace: (organizationId: string | null) => Promise<void>;
+    leaveWorkspace: () => void;
 };
 
 const OrganizationContext = createContext<OrganizationContextValue | undefined>(
@@ -43,6 +56,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         OrganizationsHome["pendingInvites"]
     >([]);
     const [loading, setLoading] = useState(true);
+    const [enteredWorkspaceId, setEnteredWorkspaceId] =
+        useState<WorkspaceSessionId | null>(null);
+    const [sessionHydrated, setSessionHydrated] = useState(false);
 
     const reload = useCallback(async () => {
         if (!isAuthenticated) {
@@ -72,6 +88,30 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         void reload();
     }, [authLoading, reload]);
 
+    useEffect(() => {
+        if (authLoading) return;
+        if (!isAuthenticated) {
+            clearWorkspaceSession();
+            setEnteredWorkspaceId(null);
+            setSessionHydrated(true);
+            return;
+        }
+        setEnteredWorkspaceId(readWorkspaceSession());
+        setSessionHydrated(true);
+    }, [authLoading, isAuthenticated]);
+
+    useEffect(() => {
+        if (!sessionHydrated || !enteredWorkspaceId || loading) return;
+        if (enteredWorkspaceId === PERSONAL_WORKSPACE_ID) return;
+        const stillMember = organizations.some(
+            (org) => org.id === enteredWorkspaceId,
+        );
+        if (!stillMember) {
+            clearWorkspaceSession();
+            setEnteredWorkspaceId(null);
+        }
+    }, [enteredWorkspaceId, loading, organizations, sessionHydrated]);
+
     const switchOrganization = useCallback(
         async (organizationId: string | null) => {
             const result = await setActiveOrganizationRequest(organizationId);
@@ -79,6 +119,21 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         },
         [],
     );
+
+    const enterWorkspace = useCallback(
+        async (organizationId: string | null) => {
+            await switchOrganization(organizationId);
+            const sessionId = toWorkspaceSessionId(organizationId);
+            writeWorkspaceSession(sessionId);
+            setEnteredWorkspaceId(sessionId);
+        },
+        [switchOrganization],
+    );
+
+    const leaveWorkspace = useCallback(() => {
+        clearWorkspaceSession();
+        setEnteredWorkspaceId(null);
+    }, []);
 
     const createOrganization = useCallback(async (name: string) => {
         const organization = await createOrganizationRequest(name);
@@ -106,9 +161,14 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             activeOrganizationId,
             pendingInvites,
             loading,
+            sessionHydrated,
+            hasEnteredWorkspace: enteredWorkspaceId !== null,
+            enteredWorkspaceId,
             reload,
             switchOrganization,
             createOrganization,
+            enterWorkspace,
+            leaveWorkspace,
         }),
         [
             organizations,
@@ -116,9 +176,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             activeOrganizationId,
             pendingInvites,
             loading,
+            sessionHydrated,
+            enteredWorkspaceId,
             reload,
             switchOrganization,
             createOrganization,
+            enterWorkspace,
+            leaveWorkspace,
         ],
     );
 

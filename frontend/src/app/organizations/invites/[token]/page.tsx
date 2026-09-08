@@ -18,7 +18,7 @@ export default function AcceptOrganizationInvitePage() {
     const token = decodeURIComponent(params.token ?? "");
     const router = useRouter();
     const { isAuthenticated, authLoading } = useAuth();
-    const { reload } = useOrganization();
+    const { reload, enterWorkspace } = useOrganization();
     const [invite, setInvite] = useState<OrganizationInvitePreview | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [accepting, setAccepting] = useState(false);
@@ -36,7 +36,8 @@ export default function AcceptOrganizationInvitePage() {
         try {
             const organization = await acceptOrganizationInvite(token);
             await reload();
-            router.replace(`/organizations/${organization.id}`);
+            await enterWorkspace(organization.id);
+            router.replace("/projects");
         } catch (err) {
             setError((err as Error).message);
         } finally {
