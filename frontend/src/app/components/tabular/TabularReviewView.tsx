@@ -47,6 +47,7 @@ import { ApiKeyMissingPopup } from "../popups/ApiKeyMissingPopup";
 import { ConfirmPopup } from "../popups/ConfirmPopup";
 import { HeaderActionsMenu } from "../shared/HeaderActionsMenu";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import {
     getModelProvider,
@@ -93,6 +94,7 @@ export function TRView({ reviewId, projectId }: Props) {
     >("idle");
     const [ownerOnlyAction, setOwnerOnlyAction] = useState<string | null>(null);
     const { user } = useAuth();
+    const { activeOrganizationId } = useOrganization();
     const [expandedCell, setExpandedCell] = useState<TabularCell | null>(null);
     const [expandedCellCitation, setExpandedCellCitation] = useState<
         { quote: string; page: number } | undefined
@@ -167,13 +169,13 @@ export function TRView({ reviewId, projectId }: Props) {
             );
         } else {
             fetches.push(
-                listProjects()
+                listProjects({ organizationId: activeOrganizationId })
                     .then(setAvailableProjects)
                     .catch(() => setAvailableProjects([])),
             );
         }
         Promise.all(fetches).finally(() => setLoading(false));
-    }, [reviewId, projectId]);
+    }, [reviewId, projectId, activeOrganizationId]);
 
     function getNextColumnIndex() {
         return (

@@ -8,6 +8,8 @@ import { ChatHistoryProvider } from "@/app/contexts/ChatHistoryContext";
 import { SidebarContext } from "@/app/contexts/SidebarContext";
 import { PageChromeContext } from "@/app/contexts/PageChromeContext";
 import { AppSidebar } from "@/app/components/shared/AppSidebar";
+import { WorkspaceGate } from "@/app/components/organizations/WorkspaceGate";
+import { WorkspaceIdentity } from "@/app/components/organizations/WorkspaceIdentity";
 
 export default function SterlexLayout({
     children,
@@ -90,6 +92,7 @@ export default function SterlexLayout({
     if (!isAuthenticated) return null;
 
     return (
+        <WorkspaceGate>
         <ChatHistoryProvider>
             <PageChromeContext.Provider value={{ mobileActionsContainer }}>
                 <SidebarContext.Provider
@@ -124,9 +127,12 @@ export default function SterlexLayout({
                                     >
                                         <PanelLeft className="h-4 w-4" />
                                     </button>
+                                    <div className="min-w-0 flex-1">
+                                        <WorkspaceIdentity compact />
+                                    </div>
                                     <div
                                         ref={handleMobileActionsContainerRef}
-                                        className="ml-auto flex min-w-0 flex-1 items-center justify-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                                        className="ml-auto flex shrink-0 items-center justify-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                                     />
                                 </div>
                                 <main className="flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain md:overflow-hidden">
@@ -138,5 +144,6 @@ export default function SterlexLayout({
                 </SidebarContext.Provider>
             </PageChromeContext.Provider>
         </ChatHistoryProvider>
+        </WorkspaceGate>
     );
 }

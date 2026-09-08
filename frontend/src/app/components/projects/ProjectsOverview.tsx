@@ -11,6 +11,7 @@ import {
 import { OwnerOnlyPopup } from "@/app/components/popups/OwnerOnlyPopup";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { useWorkspaceLabel } from "@/app/hooks/useWorkspaceLabel";
 import type { Project } from "@/app/components/shared/types";
 import { NewProjectModal } from "./NewProjectModal";
 import { ProjectDetailsModal } from "./ProjectDetailsModal";
@@ -20,7 +21,6 @@ import {
     RowActions,
 } from "@/app/components/shared/RowActions";
 import { PageHeader } from "@/app/components/shared/PageHeader";
-import { PendingOrganizationInvites } from "@/app/components/organizations/PendingOrganizationInvites";
 import {
     TABLE_CHECKBOX_CLASS,
     TABLE_STICKY_CELL_BG,
@@ -71,6 +71,8 @@ export function ProjectsOverview() {
     const router = useRouter();
     const { user, isAuthenticated, authLoading } = useAuth();
     const { activeOrganizationId, loading: orgLoading } = useOrganization();
+    const { name: workspaceName, detail: workspaceDetail, isPersonal } =
+        useWorkspaceLabel();
 
     useEffect(() => {
         let cancelled = false;
@@ -265,14 +267,16 @@ export function ProjectsOverview() {
                     },
                 ]}
             >
-                <h1 className="text-2xl font-medium font-serif text-gray-900">
-                    Projects
-                </h1>
+                <div>
+                    <h1 className="text-2xl font-medium font-serif text-gray-900">
+                        Projects
+                    </h1>
+                    <p className="mt-0.5 text-xs capitalize text-gray-500">
+                        {workspaceName}
+                        {workspaceDetail ? ` · ${workspaceDetail}` : ""}
+                    </p>
+                </div>
             </PageHeader>
-
-            <div className="px-4 md:px-6">
-                <PendingOrganizationInvites />
-            </div>
 
             <TableToolbar
                 items={filters}
@@ -377,12 +381,14 @@ export function ProjectsOverview() {
                             <>
                                 <FolderOpen className="h-8 w-8 text-gray-300 mb-4" />
                                 <p className="text-2xl font-medium font-serif text-gray-900">
-                                    Projects
+                                    {isPersonal
+                                        ? "Personal workspace"
+                                        : workspaceName}
                                 </p>
                                 <p className="mt-1 text-xs text-gray-400 max-w-xs">
-                                    Upload documents into projects and to
-                                    commence chats and tabular reviews with
-                                    them.
+                                    {isPersonal
+                                        ? "Your matters live here. Create a project to start chats and tabular reviews."
+                                        : `No matters in ${workspaceName} yet. Create a project to start working in this workspace.`}
                                 </p>
                                 <button
                                     onClick={() => setModalOpen(true)}

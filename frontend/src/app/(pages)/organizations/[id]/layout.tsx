@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { getOrganization, type Organization } from "@/app/lib/sterlexApi";
 import { accountTabButtonClassName } from "@/app/(pages)/account/accountStyles";
 import { OrganizationSettingsContext } from "./OrganizationSettingsContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 
 export default function OrganizationSettingsLayout({
     params,
@@ -17,6 +18,8 @@ export default function OrganizationSettingsLayout({
     const { id } = use(params);
     const router = useRouter();
     const pathname = usePathname();
+    const { hasEnteredWorkspace, activeOrganizationId, sessionHydrated } =
+        useOrganization();
     const [organization, setOrganization] = useState<Organization | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -44,6 +47,19 @@ export default function OrganizationSettingsLayout({
             cancelled = true;
         };
     }, [id]);
+
+    useEffect(() => {
+        if (!sessionHydrated || !hasEnteredWorkspace) return;
+        if (activeOrganizationId !== id) {
+            router.replace("/workspaces");
+        }
+    }, [
+        activeOrganizationId,
+        hasEnteredWorkspace,
+        id,
+        router,
+        sessionHydrated,
+    ]);
 
     const tabs = organization
         ? [

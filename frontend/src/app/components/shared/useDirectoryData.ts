@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { getProject, listProjects, listStandaloneDocuments } from "@/app/lib/sterlexApi";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import type { Document, Project } from "./types";
 
 const CACHE_TTL_MS = 30_000;
 
 interface DirectoryCache {
+    key: string;
     standaloneDocuments: Document[];
     projects: Project[];
     fetchedAt: number;
@@ -18,16 +20,22 @@ export function invalidateDirectoryCache() {
     cache = null;
 }
 
+function workspaceCacheKey(organizationId: string | null) {
+    return organizationId ?? "personal";
+}
+
 export function useDirectoryData(enabled: boolean) {
+    const { activeOrganizationId, loading: orgLoading } = useOrganization();
     const [loading, setLoading] = useState(true);
     const [standaloneDocuments, setStandaloneDocuments] = useState<Document[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
 
     useEffect(() => {
-        if (!enabled) return;
+        if (!enabled || orgLoading) return;
 
+        const key = workspaceCacheKey(activeOrganizationId);
         const now = Date.now();
-        if (cache && now - cache.fetchedAt < CACHE_TTL_MS) {
+        if (cache && cache.key === key && now - cache.fetchedAt < CACHE_TTL_MS) {
             setStandaloneDocuments(cache.standaloneDocuments);
             setProjects(cache.projects);
             setLoading(false);
@@ -35,7 +43,14 @@ export function useDirectoryData(enabled: boolean) {
         }
 
         setLoading(true);
-        Promise.all([listProjects(), listStandaloneDocuments()])
+        const standalonePromise = activeOrganizationId
+            ? Promise.resolve([] as Document[])
+            : listStandaloneDocuments();
+
+        Promise.all([
+            listProjects({ organizationId: activeOrganizationId }),
+            standalonePromise,
+        ])
             .then(([ps, ds]) => {
                 const sorted = [...ds].sort((a, b) =>
                     (b.created_at ?? "").localeCompare(a.created_at ?? ""),
@@ -53,6 +68,7 @@ export function useDirectoryData(enabled: boolean) {
                                 0,
                         }));
                         cache = {
+                            key,
                             standaloneDocuments: sorted,
                             projects: projectsWithCounts,
                             fetchedAt: Date.now(),
@@ -67,7 +83,7 @@ export function useDirectoryData(enabled: boolean) {
                 setProjects([]);
             })
             .finally(() => setLoading(false));
-    }, [enabled]);
+    }, [enabled, activeOrganizationId, orgLoading]);
 
     return { loading, standaloneDocuments, projects };
 }

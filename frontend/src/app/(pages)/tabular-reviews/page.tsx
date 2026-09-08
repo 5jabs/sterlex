@@ -20,6 +20,9 @@ import { NewTRModal } from "@/app/components/tabular/NewTRModal";
 import { TabularReviewDetailsModal } from "@/app/components/tabular/TabularReviewDetailsModal";
 import { OwnerOnlyPopup } from "@/app/components/popups/OwnerOnlyPopup";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { useWorkspaceLabel } from "@/app/hooks/useWorkspaceLabel";
+import { filterByWorkspace } from "@/app/lib/workspaceScope";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import {
     GLASS_DROPDOWN,
@@ -75,22 +78,39 @@ export default function TabularReviewsPage() {
     const actionsRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const { user } = useAuth();
+    const { activeOrganizationId, loading: orgLoading } = useOrganization();
+    const { name: workspaceName, detail: workspaceDetail } =
+        useWorkspaceLabel();
+    const isPersonal = activeOrganizationId == null;
 
     useEffect(() => {
+        if (orgLoading) {
+            setLoading(true);
+            return;
+        }
+        setLoading(true);
         Promise.all([
             listTabularReviews().catch(() => []),
-            listProjects().catch(() => []),
+            listProjects({ organizationId: activeOrganizationId }).catch(
+                () => [],
+            ),
         ])
             .then(([r, p]) => {
                 setReviews(r);
                 setProjects(p);
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [activeOrganizationId, orgLoading]);
 
     useEffect(() => {
         setSelectedIds([]);
     }, [activeScope, projectFilter]);
+
+    useEffect(() => {
+        if (!isPersonal && activeScope === "standalone") {
+            setActiveScope("all");
+        }
+    }, [activeScope, isPersonal]);
 
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -106,7 +126,16 @@ export default function TabularReviewsPage() {
     }, [actionsOpen]);
 
     const q = search.toLowerCase();
-    const filtered = reviews
+    const workspaceProjectIds = new Set(projects.map((project) => project.id));
+    const workspaceReviews = filterByWorkspace(
+        reviews,
+        isPersonal,
+        workspaceProjectIds,
+    );
+    const reviewScopes = isPersonal
+        ? REVIEW_SCOPES
+        : REVIEW_SCOPES.filter((scope) => scope.id !== "standalone");
+    const filtered = workspaceReviews
         .filter((r) => {
             if (activeScope === "in-project") return !!r.project_id;
             if (activeScope === "standalone") return !r.project_id;
@@ -265,13 +294,19 @@ export default function TabularReviewsPage() {
                     },
                 ]}
             >
-                <h1 className="text-2xl font-medium font-serif text-gray-900">
-                    Tabular Reviews
-                </h1>
+                <div>
+                    <h1 className="text-2xl font-medium font-serif text-gray-900">
+                        Tabular Reviews
+                    </h1>
+                    <p className="mt-0.5 text-xs capitalize text-gray-500">
+                        {workspaceName}
+                        {workspaceDetail ? ` · ${workspaceDetail}` : ""}
+                    </p>
+                </div>
             </PageHeader>
 
             <TableToolbar
-                items={REVIEW_SCOPES}
+                items={reviewScopes}
                 active={activeScope}
                 onChange={setActiveScope}
                 actions={toolbarActions}
@@ -353,7 +388,10 @@ export default function TabularReviewsPage() {
                                 </p>
                                 <p className="mt-1 text-xs text-gray-400 max-w-xs text-left">
                                     Extract data from documents into tables
-                                    using AI.
+                                    using AI
+                                    {isPersonal
+                                        ? " in your personal workspace."
+                                        : ` in ${workspaceName}.`}
                                 </p>
                                 <button
                                     onClick={() => setNewTROpen(true)}
