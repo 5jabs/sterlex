@@ -1,6 +1,10 @@
-import crypto from "crypto";
 import { createServerSupabase } from "./supabase";
 import type { UserApiKeys } from "./llm";
+import {
+    decryptStoredApiKey,
+    encryptStoredApiKey,
+    type EncryptedApiKeyRow,
+} from "./encryptedApiKeys";
 
 type Db = ReturnType<typeof createServerSupabase>;
 export type ApiKeyProvider =
@@ -9,16 +13,13 @@ export type ApiKeyProvider =
     | "openai"
     | "openrouter"
     | "courtlistener";
-export type ApiKeySource = "user" | "env" | null;
+export type ApiKeySource = "user" | "env" | "org" | null;
 export type ApiKeyStatus = Record<ApiKeyProvider, boolean> & {
     sources: Record<ApiKeyProvider, ApiKeySource>;
 };
 
-type EncryptedKeyRow = {
+type EncryptedKeyRow = EncryptedApiKeyRow & {
     provider: ApiKeyProvider;
-    encrypted_key: string;
-    iv: string;
-    auth_tag: string;
 };
 
 const PROVIDERS: ApiKeyProvider[] = [
@@ -54,48 +55,14 @@ export function hasEnvApiKey(provider: ApiKeyProvider): boolean {
     return !!envApiKey(provider);
 }
 
-function encryptionKey(): Buffer {
-    const secret = process.env.USER_API_KEYS_ENCRYPTION_SECRET;
-    if (!secret) {
-        throw new Error("USER_API_KEYS_ENCRYPTION_SECRET is not configured");
-    }
-    return crypto.scryptSync(secret, "sterlex-user-api-keys-v1", 32);
-}
-
-function encrypt(value: string): Omit<EncryptedKeyRow, "provider"> {
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv("aes-256-gcm", encryptionKey(), iv);
-    const encrypted = Buffer.concat([
-        cipher.update(value, "utf8"),
-        cipher.final(),
-    ]);
+export function envApiKeys(): UserApiKeys {
     return {
-        encrypted_key: encrypted.toString("base64"),
-        iv: iv.toString("base64"),
-        auth_tag: cipher.getAuthTag().toString("base64"),
+        claude: envApiKey("claude"),
+        gemini: envApiKey("gemini"),
+        openai: envApiKey("openai"),
+        openrouter: envApiKey("openrouter"),
+        courtlistener: envApiKey("courtlistener"),
     };
-}
-
-function decrypt(row: EncryptedKeyRow): string | null {
-    try {
-        const decipher = crypto.createDecipheriv(
-            "aes-256-gcm",
-            encryptionKey(),
-            Buffer.from(row.iv, "base64"),
-        );
-        decipher.setAuthTag(Buffer.from(row.auth_tag, "base64"));
-        const decrypted = Buffer.concat([
-            decipher.update(Buffer.from(row.encrypted_key, "base64")),
-            decipher.final(),
-        ]);
-        return decrypted.toString("utf8");
-    } catch (err) {
-        console.error("[user-api-keys] failed to decrypt stored key", {
-            provider: row.provider,
-            error: err instanceof Error ? err.message : String(err),
-        });
-        return null;
-    }
 }
 
 function isProvider(value: string): value is ApiKeyProvider {
@@ -171,7 +138,34 @@ export async function getUserApiKeys(
         const provider = normalizeApiKeyProvider(row.provider);
         if (!provider) continue;
         if (apiKeys[provider]?.trim()) continue;
-        apiKeys[provider] = decrypt(row);
+        apiKeys[provider] = decryptStoredApiKey(row);
+    }
+
+    return apiKeys;
+}
+
+export async function getStoredUserApiKeysOnly(
+    userId: string,
+    db: Db = createServerSupabase(),
+): Promise<UserApiKeys> {
+    const apiKeys: UserApiKeys = {
+        claude: null,
+        gemini: null,
+        openai: null,
+        openrouter: null,
+        courtlistener: null,
+    };
+
+    const { data, error } = await db
+        .from("user_api_keys")
+        .select("provider, encrypted_key, iv, auth_tag")
+        .eq("user_id", userId);
+    if (error) throw error;
+
+    for (const row of (data ?? []) as EncryptedKeyRow[]) {
+        const provider = normalizeApiKeyProvider(row.provider);
+        if (!provider) continue;
+        apiKeys[provider] = decryptStoredApiKey(row);
     }
 
     return apiKeys;
@@ -198,7 +192,7 @@ export async function saveUserApiKey(
         {
             user_id: userId,
             provider,
-            ...encrypt(normalized),
+            ...encryptStoredApiKey(normalized),
             updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,provider" },

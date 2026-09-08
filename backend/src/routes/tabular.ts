@@ -675,6 +675,7 @@ tabularRouter.post(
         const { tabular_model, api_keys } = await getUserModelSettings(
             userId,
             db,
+            { projectId: review.project_id },
         );
         const missingKey = missingModelApiKey(tabular_model, api_keys);
         if (missingKey) {
@@ -807,7 +808,9 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
         }[],
     );
 
-    const { tabular_model, api_keys } = await getUserModelSettings(userId, db);
+    const { tabular_model, api_keys } = await getUserModelSettings(userId, db, {
+        projectId: review.project_id,
+    });
     const missingKey = missingModelApiKey(tabular_model, api_keys);
     if (missingKey) {
         return void res.status(422).json({
@@ -1227,7 +1230,9 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
         ),
     };
 
-    const { tabular_model, api_keys } = await getUserModelSettings(userId, db);
+    const { tabular_model, api_keys } = await getUserModelSettings(userId, db, {
+        projectId: review.project_id,
+    });
     const missingKey = missingModelApiKey(tabular_model, api_keys);
     if (missingKey) {
         return void res.status(422).json({
@@ -1336,7 +1341,9 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
 
         // Generate title on first exchange
         if (chatId && isFirstExchange && !chatTitle && lastUser.content) {
-            const { title_model } = await getUserModelSettings(userId, db);
+            const { title_model } = await getUserModelSettings(userId, db, {
+                projectId: review.project_id,
+            });
             const title = await generateChatTitle(
                 title_model,
                 lastUser.content,

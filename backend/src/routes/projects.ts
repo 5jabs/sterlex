@@ -14,6 +14,7 @@ import {
 } from "../lib/storage";
 import { docxToPdf, convertedPdfKey } from "../lib/convert";
 import { checkProjectAccess } from "../lib/access";
+import { getMembership } from "../lib/organizations";
 import { singleFileUpload } from "../lib/upload";
 import { deleteUserProjects } from "../lib/userDataCleanup";
 import {
@@ -163,18 +164,29 @@ projectsRouter.get("/", requireAuth, async (req, res) => {
   });
   if (error) return void res.status(500).json({ detail: error.message });
 
-  res.json(data ?? []);
+  const scope = req.query.organization_id;
+  let rows = (data ?? []) as Array<{ organization_id?: string | null }>;
+  if (typeof scope === "string") {
+    if (!scope || scope === "personal") {
+      rows = rows.filter((row) => !row.organization_id);
+    } else {
+      rows = rows.filter((row) => row.organization_id === scope);
+    }
+  }
+
+  res.json(rows);
 });
 
 // POST /projects
 projectsRouter.post("/", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
-  const { name, cm_number, practice, shared_with } = req.body as {
+  const { name, cm_number, practice, shared_with, organization_id } = req.body as {
     name: string;
     cm_number?: string;
     practice?: string;
     shared_with?: string[];
+    organization_id?: string | null;
   };
   if (!name?.trim())
     return void res.status(400).json({ detail: "name is required" });
@@ -197,6 +209,18 @@ projectsRouter.post("/", requireAuth, async (req, res) => {
   }
 
   const db = createServerSupabase();
+  const organizationId =
+    typeof organization_id === "string" && organization_id.trim()
+      ? organization_id.trim()
+      : null;
+  if (organizationId) {
+    const membership = await getMembership(db, organizationId, userId);
+    if (!membership) {
+      return void res.status(403).json({
+        detail: "You must be a member of the organization to create a project in it.",
+      });
+    }
+  }
   const missingSharedUsers = await findMissingUserEmails(db, cleanedSharedWith);
   if (missingSharedUsers.length > 0) {
     return void res.status(400).json({
@@ -208,6 +232,7 @@ projectsRouter.post("/", requireAuth, async (req, res) => {
     .from("projects")
     .insert({
       user_id: userId,
+      organization_id: organizationId,
       name: name.trim(),
       cm_number: normalizeOptionalString(cm_number),
       practice: normalizeOptionalString(practice),
@@ -234,12 +259,8 @@ projectsRouter.get("/:projectId", requireAuth, async (req, res) => {
   if (error || !project)
     return void res.status(404).json({ detail: "Project not found" });
 
-  const canAccess =
-    project.user_id === userId ||
-    (userEmail &&
-      Array.isArray(project.shared_with) &&
-      project.shared_with.includes(userEmail));
-  if (!canAccess)
+  const access = await checkProjectAccess(projectId, userId, userEmail, db);
+  if (!access.ok)
     return void res.status(404).json({ detail: "Project not found" });
 
   const [{ data: docs }, { data: folderData }] = await Promise.all([
@@ -256,7 +277,7 @@ projectsRouter.get("/:projectId", requireAuth, async (req, res) => {
   await attachDocumentOwnerLabels(db, docsTyped);
   res.json({
     ...project,
-    is_owner: project.user_id === userId,
+    is_owner: access.isOwner,
     documents: docsTyped,
     folders: folderData ?? [],
   });
@@ -272,23 +293,15 @@ projectsRouter.get("/:projectId/people", requireAuth, async (req, res) => {
   const { projectId } = req.params;
   const db = createServerSupabase();
 
-  const { data: project } = await db
-    .from("projects")
-    .select("id, user_id, shared_with")
-    .eq("id", projectId)
-    .single();
-  if (!project)
+  const access = await checkProjectAccess(projectId, userId, userEmail, db);
+  if (!access.ok)
     return void res.status(404).json({ detail: "Project not found" });
+  const project = access.project;
 
-  const isOwner = project.user_id === userId;
   const sharedWith = (Array.isArray(project.shared_with)
     ? (project.shared_with as string[])
     : []
   ).map((e) => e.toLowerCase());
-  const isShared =
-    !!userEmail && sharedWith.includes(userEmail.toLowerCase());
-  if (!isOwner && !isShared)
-    return void res.status(404).json({ detail: "Project not found" });
 
   // Use the mirrored profile email so sharing checks do not scan auth.users.
   const { userByEmail, userById } = await loadProfileUsersByEmail(db);

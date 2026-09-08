@@ -12,20 +12,46 @@
  */
 
 import type { createServerSupabase } from "./supabase";
+import { isOrgAdmin } from "./organizationRoles";
 
 type Db = ReturnType<typeof createServerSupabase>;
+
+export type ProjectRecord = {
+    id: string;
+    user_id: string;
+    organization_id: string | null;
+    shared_with: string[] | null;
+};
 
 export type ProjectAccess =
     | {
           ok: true;
           isOwner: boolean;
-          project: {
-              id: string;
-              user_id: string;
-              shared_with: string[] | null;
-          };
+          project: ProjectRecord;
       }
     | { ok: false };
+
+async function hasOrgAdminAllProjectsAccess(
+    organizationId: string,
+    userId: string,
+    db: Db,
+): Promise<boolean> {
+    const [{ data: org }, { data: member }] = await Promise.all([
+        db
+            .from("organizations")
+            .select("admins_can_access_all_projects")
+            .eq("id", organizationId)
+            .maybeSingle(),
+        db
+            .from("organization_members")
+            .select("role")
+            .eq("organization_id", organizationId)
+            .eq("user_id", userId)
+            .maybeSingle(),
+    ]);
+    if (!org?.admins_can_access_all_projects) return false;
+    return isOrgAdmin(member?.role as "owner" | "admin" | "member" | undefined);
+}
 
 export async function checkProjectAccess(
     projectId: string,
@@ -35,15 +61,11 @@ export async function checkProjectAccess(
 ): Promise<ProjectAccess> {
     const { data: project } = await db
         .from("projects")
-        .select("id, user_id, shared_with")
+        .select("id, user_id, organization_id, shared_with")
         .eq("id", projectId)
         .single();
     if (!project) return { ok: false };
-    const proj = project as {
-        id: string;
-        user_id: string;
-        shared_with: string[] | null;
-    };
+    const proj = project as ProjectRecord;
     if (proj.user_id === userId) {
         return { ok: true, isOwner: true, project: proj };
     }
@@ -52,6 +74,12 @@ export async function checkProjectAccess(
     if (
         email &&
         sharedWith.some((e) => (e ?? "").toLowerCase() === email)
+    ) {
+        return { ok: true, isOwner: false, project: proj };
+    }
+    if (
+        proj.organization_id &&
+        (await hasOrgAdminAllProjectsAccess(proj.organization_id, userId, db))
     ) {
         return { ok: true, isOwner: false, project: proj };
     }
@@ -171,18 +199,49 @@ export async function listAccessibleProjectIds(
     userEmail: string | null | undefined,
     db: Db,
 ): Promise<string[]> {
-    const [{ data: own }, { data: shared }] = await Promise.all([
-        db.from("projects").select("id").eq("user_id", userId),
-        userEmail
-            ? db
-                  .from("projects")
-                  .select("id")
-                  .filter("shared_with", "cs", JSON.stringify([userEmail]))
-                  .neq("user_id", userId)
-            : Promise.resolve({ data: [] as { id: string }[] }),
-    ]);
+    const [{ data: own }, { data: shared }, { data: adminOrgs }] =
+        await Promise.all([
+            db.from("projects").select("id").eq("user_id", userId),
+            userEmail
+                ? db
+                      .from("projects")
+                      .select("id")
+                      .filter("shared_with", "cs", JSON.stringify([userEmail]))
+                      .neq("user_id", userId)
+                : Promise.resolve({ data: [] as { id: string }[] }),
+            db
+                .from("organization_members")
+                .select("organization_id, role, organizations(admins_can_access_all_projects)")
+                .eq("user_id", userId),
+        ]);
     const ids = new Set<string>();
     for (const p of (own ?? []) as { id: string }[]) ids.add(p.id);
     for (const p of (shared ?? []) as { id: string }[]) ids.add(p.id);
+
+    const adminOrgIds = (adminOrgs ?? [])
+        .filter((row) => {
+            const org = (
+                row as {
+                    organizations?:
+                        | { admins_can_access_all_projects?: boolean }
+                        | { admins_can_access_all_projects?: boolean }[]
+                        | null;
+                }
+            ).organizations;
+            const settings = Array.isArray(org) ? org[0] : org;
+            return (
+                isOrgAdmin(row.role as "owner" | "admin" | "member" | undefined) &&
+                settings?.admins_can_access_all_projects === true
+            );
+        })
+        .map((row) => row.organization_id as string);
+
+    if (adminOrgIds.length > 0) {
+        const { data: orgProjects } = await db
+            .from("projects")
+            .select("id")
+            .in("organization_id", adminOrgIds);
+        for (const p of (orgProjects ?? []) as { id: string }[]) ids.add(p.id);
+    }
     return [...ids];
 }

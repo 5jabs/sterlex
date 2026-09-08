@@ -12,6 +12,7 @@ import { workflowsRouter } from "./routes/workflows";
 import { userRouter } from "./routes/user";
 import { downloadsRouter } from "./routes/downloads";
 import { caseLawRouter } from "./routes/caseLaw";
+import { organizationsRouter } from "./routes/organizations";
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -153,6 +154,7 @@ app.use("/tabular-review", tabularRouter);
 app.use("/workflows", workflowsRouter);
 app.use("/user", userRouter);
 app.use("/users", userRouter);
+app.use("/organizations", organizationsRouter);
 app.use("/download", downloadsRouter);
 app.use("/case-law", caseLawRouter);
 
