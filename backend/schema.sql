@@ -23,6 +23,7 @@ create table if not exists public.user_profiles (
   quote_model text,
   mfa_on_login boolean not null default false,
   legal_research_us boolean not null default true,
+  active_organization_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -188,12 +189,117 @@ create index if not exists idx_user_mcp_tool_audit_logs_user_created
 alter table public.user_mcp_tool_audit_logs enable row level security;
 
 -- ---------------------------------------------------------------------------
+-- Organizations (optional enterprise tenancy alongside personal workspace)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.organizations (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  slug text not null,
+  created_by uuid references auth.users(id) on delete set null,
+  admins_can_access_all_projects boolean not null default false,
+  monthly_budget_usd numeric(12, 2),
+  budget_enforcement text not null default 'off'
+    check (budget_enforcement in ('off', 'soft', 'hard')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists organizations_slug_key
+  on public.organizations (slug);
+
+create index if not exists idx_organizations_created_by
+  on public.organizations (created_by);
+
+alter table public.organizations enable row level security;
+
+create table if not exists public.organization_members (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null check (role in ('owner', 'admin', 'member')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id, user_id)
+);
+
+create unique index if not exists organization_members_one_owner
+  on public.organization_members (organization_id)
+  where role = 'owner';
+
+create index if not exists idx_organization_members_user
+  on public.organization_members (user_id);
+
+alter table public.organization_members enable row level security;
+
+create table if not exists public.organization_invites (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  email text not null,
+  role text not null check (role in ('admin', 'member')),
+  token_hash text not null unique,
+  invited_by uuid references auth.users(id) on delete set null,
+  status text not null default 'pending'
+    check (status in ('pending', 'accepted', 'revoked', 'expired')),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists organization_invites_pending_email
+  on public.organization_invites (organization_id, email)
+  where status = 'pending';
+
+create index if not exists idx_organization_invites_email
+  on public.organization_invites (email);
+
+alter table public.organization_invites enable row level security;
+
+create table if not exists public.organization_api_keys (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  provider text not null check (provider in ('claude', 'gemini', 'openai', 'openrouter', 'courtlistener')),
+  encrypted_key text not null,
+  iv text not null,
+  auth_tag text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id, provider)
+);
+
+create index if not exists idx_organization_api_keys_org
+  on public.organization_api_keys (organization_id);
+
+alter table public.organization_api_keys enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_profiles_active_organization_id_fkey'
+      and conrelid = 'public.user_profiles'::regclass
+  ) then
+    alter table public.user_profiles
+      add constraint user_profiles_active_organization_id_fkey
+      foreign key (active_organization_id)
+      references public.organizations(id)
+      on delete set null;
+  end if;
+end;
+$$;
+
+create index if not exists idx_user_profiles_active_organization
+  on public.user_profiles (active_organization_id);
+
+-- ---------------------------------------------------------------------------
 -- Projects and documents
 -- ---------------------------------------------------------------------------
 
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   user_id text not null,
+  organization_id uuid references public.organizations(id) on delete restrict,
   name text not null,
   cm_number text,
   practice text,
@@ -206,8 +312,33 @@ create table if not exists public.projects (
 create index if not exists idx_projects_user
   on public.projects(user_id);
 
+create index if not exists idx_projects_organization
+  on public.projects (organization_id);
+
 create index if not exists projects_shared_with_idx
   on public.projects using gin (shared_with);
+
+create table if not exists public.llm_usage_events (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid references public.organizations(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  project_id uuid references public.projects(id) on delete set null,
+  provider text not null,
+  model text,
+  input_tokens integer not null default 0,
+  output_tokens integer not null default 0,
+  estimated_cost_usd numeric(12, 6) not null default 0,
+  key_source text check (key_source in ('org', 'user', 'env')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_llm_usage_events_org_created
+  on public.llm_usage_events (organization_id, created_at desc);
+
+create index if not exists idx_llm_usage_events_user_created
+  on public.llm_usage_events (user_id, created_at desc);
+
+alter table public.llm_usage_events enable row level security;
 
 create table if not exists public.project_subfolders (
   id uuid primary key default gen_random_uuid(),
@@ -583,6 +714,7 @@ create or replace function public.get_projects_overview(
 returns table (
   id uuid,
   user_id text,
+  organization_id uuid,
   name text,
   cm_number text,
   practice text,
@@ -608,6 +740,18 @@ as $$
         and p.user_id <> p_user_id
         and p.shared_with @> jsonb_build_array(p_user_email)
       )
+       or (
+        p.organization_id is not null
+        and exists (
+          select 1
+          from public.organization_members m
+          join public.organizations o on o.id = m.organization_id
+          where m.organization_id = p.organization_id
+            and m.user_id::text = p_user_id
+            and o.admins_can_access_all_projects = true
+            and m.role in ('owner', 'admin')
+        )
+      )
   ),
   document_counts as (
     select d.project_id, count(*)::integer as document_count
@@ -630,6 +774,7 @@ as $$
   select
     vp.id,
     vp.user_id,
+    vp.organization_id,
     vp.name,
     vp.cm_number,
     vp.practice,
@@ -698,6 +843,18 @@ as $$
         coalesce(p_user_email, '') <> ''
         and p.user_id <> p_user_id
         and p.shared_with @> jsonb_build_array(p_user_email)
+      )
+       or (
+        p.organization_id is not null
+        and exists (
+          select 1
+          from public.organization_members m
+          join public.organizations o on o.id = m.organization_id
+          where m.organization_id = p.organization_id
+            and m.user_id::text = p_user_id
+            and o.admins_can_access_all_projects = true
+            and m.role in ('owner', 'admin')
+        )
       )
   ),
   visible_reviews as (
@@ -858,3 +1015,8 @@ revoke all on public.user_mcp_connector_tools from anon, authenticated;
 revoke all on public.user_mcp_tool_audit_logs from anon, authenticated;
 revoke all on public.courtlistener_citation_index from anon, authenticated;
 revoke all on public.courtlistener_opinion_cluster_index from anon, authenticated;
+revoke all on public.organizations from anon, authenticated;
+revoke all on public.organization_members from anon, authenticated;
+revoke all on public.organization_invites from anon, authenticated;
+revoke all on public.organization_api_keys from anon, authenticated;
+revoke all on public.llm_usage_events from anon, authenticated;
