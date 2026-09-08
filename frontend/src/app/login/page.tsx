@@ -8,6 +8,7 @@ import { Input } from "@/app/components/ui/input";
 import Link from "next/link";
 import { SiteLogo } from "@/app/components/site-logo";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { postAuthRedirectPath, withCurrentSearch } from "@/app/lib/postAuthRedirect";
 
 const authGlassCardClassName =
     "rounded-2xl border border-white/70 bg-white/72 p-6 shadow-[0_4px_14px_rgba(15,23,42,0.045),inset_0_1px_0_rgba(255,255,255,0.86),inset_0_-8px_18px_rgba(255,255,255,0.12)] backdrop-blur-2xl md:p-8";
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
-            router.replace("/assistant");
+            router.replace(postAuthRedirectPath(window.location.search));
         }
     }, [authLoading, isAuthenticated, router]);
 
@@ -47,7 +48,7 @@ export default function LoginPage() {
 
             if (error) throw error;
 
-            router.push("/assistant");
+            router.push(postAuthRedirectPath(window.location.search));
         } catch (error: unknown) {
             setError(
                 error instanceof Error
@@ -76,7 +77,7 @@ export default function LoginPage() {
                                 Log in
                             </span>
                             <Link
-                                href="/signup"
+                                href={withCurrentSearch("/signup", typeof window === "undefined" ? "" : window.location.search)}
                                 className={authToggleInactiveClassName}
                             >
                                 Sign up

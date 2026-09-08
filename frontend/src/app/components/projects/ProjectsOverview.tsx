@@ -10,6 +10,7 @@ import {
 } from "@/app/lib/sterlexApi";
 import { OwnerOnlyPopup } from "@/app/components/popups/OwnerOnlyPopup";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import type { Project } from "@/app/components/shared/types";
 import { NewProjectModal } from "./NewProjectModal";
 import { ProjectDetailsModal } from "./ProjectDetailsModal";
@@ -68,6 +69,7 @@ export function ProjectsOverview() {
     const actionsRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const { user, isAuthenticated, authLoading } = useAuth();
+    const { activeOrganizationId, loading: orgLoading } = useOrganization();
 
     useEffect(() => {
         let cancelled = false;
@@ -75,7 +77,7 @@ export function ProjectsOverview() {
         async function loadProjects() {
             await Promise.resolve();
             if (cancelled) return;
-            if (authLoading) {
+            if (authLoading || orgLoading) {
                 setLoading(true);
                 return;
             }
@@ -89,7 +91,9 @@ export function ProjectsOverview() {
             setLoading(true);
             setLoadError(null);
             try {
-                const loaded = await listProjects();
+                const loaded = await listProjects({
+                    organizationId: activeOrganizationId,
+                });
                 if (!cancelled) setProjects(loaded);
             } catch (err) {
                 console.error("[projects] failed to load projects", err);
@@ -107,7 +111,7 @@ export function ProjectsOverview() {
         return () => {
             cancelled = true;
         };
-    }, [authLoading, isAuthenticated, user?.id]);
+    }, [authLoading, isAuthenticated, user?.id, activeOrganizationId, orgLoading]);
 
     useEffect(() => {
         function handleClick(e: MouseEvent) {

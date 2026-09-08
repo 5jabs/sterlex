@@ -10,6 +10,7 @@ import { SiteLogo } from "@/app/components/site-logo";
 import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { updateUserProfile } from "@/app/lib/sterlexApi";
+import { postAuthRedirectPath, withCurrentSearch } from "@/app/lib/postAuthRedirect";
 
 const authGlassCardClassName =
     "rounded-2xl border border-white/70 bg-white/72 p-6 shadow-[0_4px_14px_rgba(15,23,42,0.045),inset_0_1px_0_rgba(255,255,255,0.86),inset_0_-8px_18px_rgba(255,255,255,0.12)] backdrop-blur-2xl md:p-8";
@@ -36,7 +37,7 @@ export default function SignupPage() {
 
     useEffect(() => {
         if (!authLoading && isAuthenticated && !success) {
-            router.replace("/assistant");
+            router.replace(postAuthRedirectPath(window.location.search));
         }
     }, [authLoading, isAuthenticated, router, success]);
 
@@ -86,7 +87,7 @@ export default function SignupPage() {
             }
             setSuccess(true);
             setTimeout(() => {
-                router.push("/assistant");
+                router.push(postAuthRedirectPath(window.location.search));
             }, 2000);
         } catch (error: unknown) {
             setError(
@@ -139,7 +140,7 @@ export default function SignupPage() {
                         </h2>
                         <div className={authToggleClassName}>
                             <Link
-                                href="/login"
+                                href={withCurrentSearch("/login", typeof window === "undefined" ? "" : window.location.search)}
                                 className={authToggleInactiveClassName}
                             >
                                 Log in

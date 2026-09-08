@@ -3,15 +3,18 @@
 import { Suspense } from "react";
 import { AuthProvider } from "@/app/contexts/AuthContext";
 import { UserProfileProvider } from "@/app/contexts/UserProfileContext";
+import { OrganizationProvider } from "@/app/contexts/OrganizationContext";
 import { MfaLoginGate } from "@/app/components/shared/MfaLoginGate";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <AuthProvider>
             <UserProfileProvider>
-                <Suspense fallback={<ProviderLoader />}>
-                    <MfaLoginGate>{children}</MfaLoginGate>
-                </Suspense>
+                <OrganizationProvider>
+                    <Suspense fallback={<ProviderLoader />}>
+                        <MfaLoginGate>{children}</MfaLoginGate>
+                    </Suspense>
+                </OrganizationProvider>
             </UserProfileProvider>
         </AuthProvider>
     );

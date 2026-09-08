@@ -162,8 +162,15 @@ async function toApiError(response: Response, path: string) {
 // Projects
 // ---------------------------------------------------------------------------
 
-export async function listProjects(): Promise<Project[]> {
-    return apiRequest<Project[]>("/projects");
+export async function listProjects(options?: {
+    organizationId?: string | null;
+}): Promise<Project[]> {
+    const params = new URLSearchParams();
+    if (options && "organizationId" in (options ?? {})) {
+        params.set("organization_id", options.organizationId ?? "personal");
+    }
+    const query = params.toString();
+    return apiRequest<Project[]>(`/projects${query ? `?${query}` : ""}`);
 }
 
 export async function createProject(
@@ -171,11 +178,18 @@ export async function createProject(
     cm_number?: string,
     practice?: string,
     shared_with?: string[],
+    organization_id?: string | null,
 ): Promise<Project> {
     return apiRequest<Project>("/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, cm_number, practice, shared_with }),
+        body: JSON.stringify({
+            name,
+            cm_number,
+            practice,
+            shared_with,
+            organization_id: organization_id ?? null,
+        }),
     });
 }
 
@@ -1292,4 +1306,224 @@ export async function deleteWorkflowShare(
     await apiRequest(`/workflows/${workflowId}/shares/${shareId}`, {
         method: "DELETE",
     });
+}
+
+export type OrgRole = "owner" | "admin" | "member";
+export type OrgInviteRole = "admin" | "member";
+export type BudgetEnforcement = "off" | "soft" | "hard";
+
+export interface Organization {
+    id: string;
+    name: string;
+    slug: string;
+    created_by: string | null;
+    admins_can_access_all_projects: boolean;
+    monthly_budget_usd: number | null;
+    budget_enforcement: BudgetEnforcement;
+    created_at: string;
+    updated_at: string;
+    role: OrgRole;
+}
+
+export interface OrganizationMember {
+    id: string;
+    organization_id: string;
+    user_id: string;
+    role: OrgRole;
+    email: string | null;
+    display_name: string | null;
+    created_at: string;
+}
+
+export interface OrganizationInvite {
+    id: string;
+    organization_id: string;
+    email: string;
+    role: OrgInviteRole;
+    status: "pending" | "accepted" | "revoked" | "expired";
+    expires_at: string;
+    created_at: string;
+    acceptUrl?: string;
+    organization_name?: string;
+}
+
+export interface OrganizationInvitePreview {
+    id: string;
+    organizationId: string;
+    organizationName: string | null;
+    email: string;
+    role: OrgInviteRole;
+    status: string;
+    expiresAt: string;
+}
+
+export interface OrganizationsHome {
+    organizations: Organization[];
+    activeOrganizationId: string | null;
+    pendingInvites: Array<{
+        id: string;
+        organizationId: string;
+        organizationName: string | null;
+        role: OrgInviteRole;
+        email: string;
+        expiresAt: string;
+    }>;
+}
+
+export interface OrganizationUsage {
+    periodStart: string;
+    periodEnd: string;
+    eventCount: number;
+    inputTokens: number;
+    outputTokens: number;
+    estimatedCostUsd: number;
+    byProvider: Record<
+        string,
+        { inputTokens: number; outputTokens: number; estimatedCostUsd: number }
+    >;
+    monthlyBudgetUsd: number | null;
+    budgetEnforcement: BudgetEnforcement;
+}
+
+export async function listOrganizations(): Promise<OrganizationsHome> {
+    return apiRequest<OrganizationsHome>("/organizations");
+}
+
+export async function createOrganization(name: string): Promise<Organization> {
+    return apiRequest<Organization>("/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+    });
+}
+
+export async function setActiveOrganization(
+    organizationId: string | null,
+): Promise<{ activeOrganizationId: string | null }> {
+    return apiRequest("/organizations/active", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId }),
+    });
+}
+
+export async function getOrganization(
+    organizationId: string,
+): Promise<Organization> {
+    return apiRequest<Organization>(`/organizations/${organizationId}`);
+}
+
+export async function updateOrganization(
+    organizationId: string,
+    payload: {
+        name?: string;
+        adminsCanAccessAllProjects?: boolean;
+        monthlyBudgetUsd?: number | null;
+        budgetEnforcement?: BudgetEnforcement;
+    },
+): Promise<Organization> {
+    return apiRequest<Organization>(`/organizations/${organizationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteOrganization(
+    organizationId: string,
+): Promise<void> {
+    return apiRequest(`/organizations/${organizationId}`, { method: "DELETE" });
+}
+
+export async function listOrganizationMembers(
+    organizationId: string,
+): Promise<OrganizationMember[]> {
+    return apiRequest(`/organizations/${organizationId}/members`);
+}
+
+export async function updateOrganizationMemberRole(
+    organizationId: string,
+    memberUserId: string,
+    role: OrgRole,
+): Promise<OrganizationMember[]> {
+    return apiRequest(`/organizations/${organizationId}/members/${memberUserId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+    });
+}
+
+export async function removeOrganizationMember(
+    organizationId: string,
+    memberUserId: string,
+): Promise<void> {
+    return apiRequest(
+        `/organizations/${organizationId}/members/${memberUserId}`,
+        { method: "DELETE" },
+    );
+}
+
+export async function listOrganizationInvites(
+    organizationId: string,
+): Promise<OrganizationInvite[]> {
+    return apiRequest(`/organizations/${organizationId}/invites`);
+}
+
+export async function createOrganizationInvite(
+    organizationId: string,
+    payload: { email: string; role: OrgInviteRole },
+): Promise<OrganizationInvite> {
+    return apiRequest(`/organizations/${organizationId}/invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function revokeOrganizationInvite(
+    organizationId: string,
+    inviteId: string,
+): Promise<void> {
+    return apiRequest(
+        `/organizations/${organizationId}/invites/${inviteId}`,
+        { method: "DELETE" },
+    );
+}
+
+export async function getOrganizationInvite(
+    token: string,
+): Promise<OrganizationInvitePreview> {
+    return apiRequest(`/organizations/invites/${encodeURIComponent(token)}`);
+}
+
+export async function acceptOrganizationInvite(
+    token: string,
+): Promise<Organization> {
+    return apiRequest(`/organizations/invites/${encodeURIComponent(token)}/accept`, {
+        method: "POST",
+    });
+}
+
+export async function getOrganizationApiKeyStatus(
+    organizationId: string,
+): Promise<ApiKeyStatus> {
+    return apiRequest(`/organizations/${organizationId}/api-keys`);
+}
+
+export async function saveOrganizationApiKey(
+    organizationId: string,
+    provider: ApiKeyProvider,
+    apiKey: string | null,
+): Promise<ApiKeyStatus> {
+    return apiRequest(`/organizations/${organizationId}/api-keys/${provider}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: apiKey }),
+    });
+}
+
+export async function getOrganizationUsage(
+    organizationId: string,
+): Promise<OrganizationUsage> {
+    return apiRequest(`/organizations/${organizationId}/usage`);
 }

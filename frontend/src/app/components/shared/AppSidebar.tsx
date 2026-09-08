@@ -19,6 +19,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
 import { listProjects } from "@/app/lib/sterlexApi";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { WorkspaceSwitcher } from "@/app/components/organizations/WorkspaceSwitcher";
 import type { Project } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
 import { isMobileViewport } from "@/app/hooks/useIsMobile";
@@ -38,6 +40,7 @@ interface AppSidebarProps {
 export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     const { user } = useAuth();
     const { profile } = useUserProfile();
+    const { activeOrganizationId, loading: orgLoading } = useOrganization();
     const { chats, hasMoreChats, loadMoreChats, setCurrentChatId } =
         useChatHistoryContext();
     const router = useRouter();
@@ -67,8 +70,8 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     );
 
     useEffect(() => {
-        if (!user) return;
-        listProjects()
+        if (!user || orgLoading) return;
+        listProjects({ organizationId: activeOrganizationId })
             .then((projects) => {
                 const map: Record<string, string> = {};
                 const ownerMap: Record<string, boolean> = {};
@@ -93,7 +96,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                 setProjectOwnerIds({});
                 setRecentProjects([]);
             });
-    }, [user]);
+    }, [user, activeOrganizationId, orgLoading]);
 
     const closeIfMobile = () => {
         if (isMobileViewport() && isOpen) {
@@ -442,6 +445,9 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                         </div>
                     </div>
                 )}
+
+                {/* Workspace switcher */}
+                <WorkspaceSwitcher collapsed={!isOpen} />
 
                 {/* User Profile */}
                 <div className="mt-auto p-1">
