@@ -69,6 +69,15 @@ export async function checkProjectAccess(
     if (proj.user_id === userId) {
         return { ok: true, isOwner: true, project: proj };
     }
+    const { data: membership } = await db
+        .from("project_members")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("user_id", userId)
+        .maybeSingle();
+    if (membership) {
+        return { ok: true, isOwner: false, project: proj };
+    }
     const sharedWith = Array.isArray(proj.shared_with) ? proj.shared_with : [];
     const email = (userEmail ?? "").toLowerCase();
     if (
@@ -190,18 +199,18 @@ export async function filterAccessibleDocumentIds(
 }
 
 /**
- * Returns the set of project IDs the user can access — own projects plus
- * any project where their email is in `shared_with`. Used to scope chat
- * lists and similar collection queries.
+ * Returns the set of project IDs the user can access — own projects,
+ * project_members rows, shared_with email fallback, and org-admin-all.
  */
 export async function listAccessibleProjectIds(
     userId: string,
     userEmail: string | null | undefined,
     db: Db,
 ): Promise<string[]> {
-    const [{ data: own }, { data: shared }, { data: adminOrgs }] =
+    const [{ data: own }, { data: memberOf }, { data: shared }, { data: adminOrgs }] =
         await Promise.all([
             db.from("projects").select("id").eq("user_id", userId),
+            db.from("project_members").select("project_id").eq("user_id", userId),
             userEmail
                 ? db
                       .from("projects")
@@ -216,6 +225,9 @@ export async function listAccessibleProjectIds(
         ]);
     const ids = new Set<string>();
     for (const p of (own ?? []) as { id: string }[]) ids.add(p.id);
+    for (const p of (memberOf ?? []) as { project_id: string }[]) {
+        ids.add(p.project_id);
+    }
     for (const p of (shared ?? []) as { id: string }[]) ids.add(p.id);
 
     const adminOrgIds = (adminOrgs ?? [])

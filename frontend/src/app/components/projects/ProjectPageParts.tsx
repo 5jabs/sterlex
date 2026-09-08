@@ -358,6 +358,7 @@ export function ProjectPageHeader({
     onDeleteProject,
     onSearchChange,
     onOpenPeople,
+    onManageAccess,
     onNewChat,
     onNewReview,
 }: {
@@ -372,6 +373,7 @@ export function ProjectPageHeader({
     onDeleteProject: () => void;
     onSearchChange: (search: string) => void;
     onOpenPeople: () => void;
+    onManageAccess?: () => void;
     onNewChat: () => void;
     onNewReview: () => void;
 }) {
@@ -420,11 +422,20 @@ export function ProjectPageHeader({
                                         icon: Pencil,
                                         onSelect: onOpenDetails,
                                     },
+                                    ...(onManageAccess
+                                        ? [
+                                              {
+                                                  label: "Manage access",
+                                                  icon: Users,
+                                                  onSelect: onManageAccess,
+                                              },
+                                          ]
+                                        : []),
                                     {
                                         label: "Delete",
                                         icon: Trash2,
                                         onSelect: onDeleteProject,
-                                        variant: "danger",
+                                        variant: "danger" as const,
                                     },
                                 ]}
                             />

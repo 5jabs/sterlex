@@ -302,6 +302,7 @@ export function ProjectsOverview() {
                         <TableHeaderCell className="ml-auto w-32">CM</TableHeaderCell>
                         <TableHeaderCell className="w-36 max-md:hidden">Practice</TableHeaderCell>
                         <TableHeaderCell className="w-32 max-md:hidden">Owner</TableHeaderCell>
+                        <TableHeaderCell className="w-24 max-md:hidden">People</TableHeaderCell>
                         <TableHeaderCell className="w-24 max-md:hidden">Files</TableHeaderCell>
                         <TableHeaderCell className="w-24 max-md:hidden">Chats</TableHeaderCell>
                         <TableHeaderCell className="w-36 max-md:hidden">
@@ -335,6 +336,9 @@ export function ProjectsOverview() {
                                 </TableCell>
                                 <TableCell className="w-32 max-md:hidden">
                                     <SkeletonLine className="w-16" />
+                                </TableCell>
+                                <TableCell className="w-24 max-md:hidden">
+                                    <SkeletonLine className="w-8" />
                                 </TableCell>
                                 <TableCell className="w-24 max-md:hidden">
                                     <SkeletonLine className="w-8" />
@@ -452,6 +456,9 @@ export function ProjectsOverview() {
                                 </TableCell>
                                 <TableCell className="w-32 max-md:hidden">
                                     {getProjectOwnerLabel(project, user?.id)}
+                                </TableCell>
+                                <TableCell className="w-24 max-md:hidden">
+                                    {1 + (project.member_count ?? 0)}
                                 </TableCell>
                                 <TableCell className="w-24 max-md:hidden">
                                     {project.document_count ?? 0}
