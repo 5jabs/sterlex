@@ -499,6 +499,7 @@ export interface ProjectAccess {
         name: string;
         organization_id: string | null;
         is_owner: boolean;
+        can_manage_members?: boolean;
     };
     owner: {
         user_id: string;
@@ -1409,6 +1410,74 @@ export interface OrganizationMember {
     email: string | null;
     display_name: string | null;
     created_at: string;
+    project_count?: number;
+}
+
+export type OrganizationActivityAction =
+    | "organization_created"
+    | "settings_updated"
+    | "member_joined"
+    | "member_removed"
+    | "member_role_changed"
+    | "ownership_transferred"
+    | "invite_created"
+    | "invite_accepted"
+    | "invite_revoked"
+    | "invite_link_regenerated"
+    | "project_member_added"
+    | "project_member_removed"
+    | "api_key_saved"
+    | "api_key_removed";
+
+export interface OrganizationActivityEvent {
+    id: string;
+    organization_id: string;
+    actor_user_id: string | null;
+    action: OrganizationActivityAction;
+    target_user_id: string | null;
+    target_email: string | null;
+    project_id: string | null;
+    metadata: Record<string, unknown>;
+    created_at: string;
+    actor_display_name: string | null;
+    actor_email: string | null;
+    target_display_name: string | null;
+    project_name: string | null;
+}
+
+export type MemberProjectAccessVia =
+    | "owner"
+    | "member"
+    | "org_admin_all"
+    | "none";
+
+export interface OrganizationMemberProject {
+    id: string;
+    name: string;
+    cm_number: string | null;
+    practice: string | null;
+    created_at: string;
+    owner_user_id: string;
+    targetAccess: MemberProjectAccessVia;
+    viewerCanGrant: boolean;
+    viewerCanRevoke: boolean;
+}
+
+export interface OrganizationMemberDetail {
+    member: OrganizationMember;
+    orgAdminsCanAccessAll: boolean;
+    viewerCanManageMember: boolean;
+    projects: OrganizationMemberProject[];
+}
+
+export interface OrganizationOverview {
+    memberCount: number;
+    pendingInviteCount: number;
+    visibleProjectCount: number;
+    configuredKeyCount: number;
+    usage: OrganizationUsage;
+    recentActivity: OrganizationActivityEvent[];
+    members: OrganizationMember[];
 }
 
 export interface OrganizationInvite {
@@ -1604,4 +1673,69 @@ export async function getOrganizationUsage(
     organizationId: string,
 ): Promise<OrganizationUsage> {
     return apiRequest(`/organizations/${organizationId}/usage`);
+}
+
+export async function getOrganizationOverview(
+    organizationId: string,
+): Promise<OrganizationOverview> {
+    return apiRequest(`/organizations/${organizationId}/overview`);
+}
+
+export async function listOrganizationActivity(
+    organizationId: string,
+): Promise<OrganizationActivityEvent[]> {
+    return apiRequest(`/organizations/${organizationId}/activity`);
+}
+
+export async function getOrganizationMemberDetail(
+    organizationId: string,
+    memberUserId: string,
+): Promise<OrganizationMemberDetail> {
+    return apiRequest(
+        `/organizations/${organizationId}/members/${memberUserId}`,
+    );
+}
+
+export async function grantOrganizationMemberProject(
+    organizationId: string,
+    memberUserId: string,
+    projectId: string,
+): Promise<void> {
+    await apiRequest(
+        `/organizations/${organizationId}/members/${memberUserId}/projects`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectId }),
+        },
+    );
+}
+
+export async function revokeOrganizationMemberProject(
+    organizationId: string,
+    memberUserId: string,
+    projectId: string,
+): Promise<void> {
+    await apiRequest(
+        `/organizations/${organizationId}/members/${memberUserId}/projects/${projectId}`,
+        { method: "DELETE" },
+    );
+}
+
+export async function regenerateOrganizationInviteLink(
+    organizationId: string,
+    inviteId: string,
+): Promise<OrganizationInvite> {
+    return apiRequest(
+        `/organizations/${organizationId}/invites/${inviteId}/link`,
+        { method: "POST" },
+    );
+}
+
+export async function acceptPendingOrganizationInvite(
+    inviteId: string,
+): Promise<Organization> {
+    return apiRequest(`/organizations/invites/pending/${inviteId}/accept`, {
+        method: "POST",
+    });
 }

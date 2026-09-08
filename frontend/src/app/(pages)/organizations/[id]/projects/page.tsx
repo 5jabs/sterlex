@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FolderOpen, Users } from "lucide-react";
+import { FolderOpen, Shield, Users } from "lucide-react";
 import { AccountSection } from "@/app/(pages)/account/AccountSection";
 import { useOrganizationSettings } from "../OrganizationSettingsContext";
 import { listProjects } from "@/app/lib/sterlexApi";
@@ -81,15 +81,17 @@ export default function OrganizationProjectsPage() {
                                 : project.owner_display_name?.trim() ||
                                   "Owner";
                         return (
-                            <button
+                            <div
                                 key={project.id}
-                                type="button"
-                                onClick={() =>
-                                    router.push(`/projects/${project.id}`)
-                                }
-                                className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left last:border-b-0 hover:bg-gray-50/80"
+                                className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 hover:bg-gray-50/80"
                             >
-                                <div className="min-w-0 flex-1">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.push(`/projects/${project.id}`)
+                                    }
+                                    className="min-w-0 flex-1 text-left"
+                                >
                                     <p className="truncate text-sm text-gray-900">
                                         {project.name}
                                     </p>
@@ -102,15 +104,27 @@ export default function OrganizationProjectsPage() {
                                             ? ` · ${project.practice}`
                                             : ""}
                                     </p>
-                                </div>
+                                </button>
                                 <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                                     <Users className="h-3 w-3" />
                                     {people}
                                 </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        router.push(
+                                            `/projects/${project.id}/access`,
+                                        )
+                                    }
+                                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                                >
+                                    <Shield className="h-3 w-3" />
+                                    Access
+                                </button>
                                 <span className="hidden w-24 text-right text-xs text-gray-500 sm:block">
                                     {formatDate(project.created_at)}
                                 </span>
-                            </button>
+                            </div>
                         );
                     })
                 )}

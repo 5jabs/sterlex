@@ -20,6 +20,7 @@ import {
     RowActions,
 } from "@/app/components/shared/RowActions";
 import { PageHeader } from "@/app/components/shared/PageHeader";
+import { PendingOrganizationInvites } from "@/app/components/organizations/PendingOrganizationInvites";
 import {
     TABLE_CHECKBOX_CLASS,
     TABLE_STICKY_CELL_BG,
@@ -268,6 +269,10 @@ export function ProjectsOverview() {
                     Projects
                 </h1>
             </PageHeader>
+
+            <div className="px-4 md:px-6">
+                <PendingOrganizationInvites />
+            </div>
 
             <TableToolbar
                 items={filters}

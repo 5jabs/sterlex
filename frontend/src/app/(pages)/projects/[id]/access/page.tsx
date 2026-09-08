@@ -136,7 +136,8 @@ export default function ProjectAccessPage({
         );
     }
 
-    const canManage = access.project.is_owner;
+    const canManage =
+        access.project.can_manage_members ?? access.project.is_owner;
     const ownerEmail = access.owner.email?.trim().toLowerCase() ?? null;
 
     return (

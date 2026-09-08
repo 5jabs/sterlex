@@ -1,205 +1,288 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { FolderOpen, KeyRound, Users } from "lucide-react";
 import { AccountSection } from "@/app/(pages)/account/AccountSection";
-import { AccountToggle } from "@/app/(pages)/account/AccountToggle";
-import {
-    accountGlassDangerOutlineButtonClassName,
-    accountGlassInputClassName,
-    accountGlassPrimaryButtonClassName,
-} from "@/app/(pages)/account/accountStyles";
-import { ConfirmPopup } from "@/app/components/popups/ConfirmPopup";
-import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { useOrganizationSettings } from "./OrganizationSettingsContext";
 import {
-    deleteOrganization,
-    updateOrganization,
-    type BudgetEnforcement,
+    getOrganizationOverview,
+    type OrganizationOverview,
 } from "@/app/lib/sterlexApi";
+import {
+    formatActivityWhen,
+    organizationActivityLabel,
+} from "@/app/lib/organizationActivityCopy";
 
-const canManage = (role: string) => role === "owner" || role === "admin";
+function money(value: number) {
+    return value.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+    });
+}
 
-export default function OrganizationGeneralPage() {
-    const { organization, setOrganization } = useOrganizationSettings();
-    const { reload, switchOrganization } = useOrganization();
+export default function OrganizationOverviewPage() {
+    const { organization } = useOrganizationSettings();
     const router = useRouter();
-    const [name, setName] = useState(organization.name);
-    const [budget, setBudget] = useState(
-        organization.monthly_budget_usd == null
-            ? ""
-            : String(organization.monthly_budget_usd),
-    );
-    const [enforcement, setEnforcement] = useState<BudgetEnforcement>(
-        organization.budget_enforcement,
-    );
-    const [saving, setSaving] = useState(false);
-    const [saved, setSaved] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [overview, setOverview] = useState<OrganizationOverview | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const manage = canManage(organization.role);
 
-    async function save() {
-        setSaving(true);
-        setError(null);
-        try {
-            const updated = await updateOrganization(organization.id, {
-                name,
-                monthlyBudgetUsd: budget.trim() ? Number(budget) : null,
-                budgetEnforcement: enforcement,
+    useEffect(() => {
+        let cancelled = false;
+        getOrganizationOverview(organization.id)
+            .then((next) => {
+                if (!cancelled) {
+                    setOverview(next);
+                    setError(null);
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) setError((err as Error).message);
             });
-            setOrganization(updated);
-            await reload();
-            setSaved(true);
-            setTimeout(() => setSaved(false), 1600);
-        } catch (err) {
-            setError((err as Error).message);
-        } finally {
-            setSaving(false);
-        }
-    }
+        return () => {
+            cancelled = true;
+        };
+    }, [organization.id]);
 
-    async function toggleAdminAccess(checked: boolean) {
-        try {
-            const updated = await updateOrganization(organization.id, {
-                adminsCanAccessAllProjects: checked,
-            });
-            setOrganization(updated);
-            await reload();
-        } catch (err) {
-            setError((err as Error).message);
-        }
-    }
-
-    async function handleDelete() {
-        try {
-            await deleteOrganization(organization.id);
-            await switchOrganization(null);
-            await reload();
-            router.push("/projects");
-        } catch (err) {
-            setError((err as Error).message);
-            setDeleteOpen(false);
-        }
-    }
+    const usage = overview?.usage;
 
     return (
         <div>
             <h2 className="mb-3 font-serif text-2xl font-medium text-gray-900">
-                General
+                Overview
             </h2>
-            <p className="mb-4 text-sm text-gray-500">
-                Organization settings apply to everyone in this workspace. Your
-                personal projects stay separate.
+            <p className="mb-6 text-sm text-gray-500">
+                {organization.name} is a shared workspace. Personal projects
+                stay in Personal. Matter access stays explicit unless admins
+                can open every project.
             </p>
-            <AccountSection className="space-y-5 p-4">
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Name
-                    </label>
-                    <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        disabled={!manage}
-                        className={accountGlassInputClassName}
-                    />
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-700">
-                            Admins can access all projects
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Off by default so matter confidentiality is preserved.
-                            Project access stays explicit unless you turn this on.
-                        </p>
-                    </div>
-                    <AccountToggle
-                        checked={organization.admins_can_access_all_projects}
-                        disabled={!manage}
-                        onChange={(checked) => void toggleAdminAccess(checked)}
-                    />
-                </div>
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Monthly budget (USD estimate)
-                    </label>
-                    <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={budget}
-                        onChange={(e) => setBudget(e.target.value)}
-                        disabled={!manage}
-                        placeholder="No cap"
-                        className={accountGlassInputClassName}
-                    />
-                </div>
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Budget enforcement
-                    </label>
-                    <select
-                        value={enforcement}
-                        onChange={(e) =>
-                            setEnforcement(e.target.value as BudgetEnforcement)
-                        }
-                        disabled={!manage}
-                        className={`${accountGlassInputClassName} h-10 w-full`}
-                    >
-                        <option value="off">Off — track only</option>
-                        <option value="soft">Soft — warn when over budget</option>
-                        <option value="hard">Hard — block new LLM calls</option>
-                    </select>
-                    <p className="mt-2 text-xs text-gray-500">
-                        Estimates use tokens recorded from app LLM calls, not
-                        the provider invoice. Soft warns on the usage page;
-                        hard returns HTTP 402 and blocks new calls.
+
+            <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard
+                    label="Members"
+                    value={String(overview?.memberCount ?? "—")}
+                    onClick={() =>
+                        router.push(`/organizations/${organization.id}/members`)
+                    }
+                />
+                <StatCard
+                    label="Projects you can see"
+                    value={String(overview?.visibleProjectCount ?? "—")}
+                    onClick={() =>
+                        router.push(
+                            `/organizations/${organization.id}/projects`,
+                        )
+                    }
+                />
+                <StatCard
+                    label="Pending invites"
+                    value={String(overview?.pendingInviteCount ?? "—")}
+                    onClick={() =>
+                        router.push(`/organizations/${organization.id}/members`)
+                    }
+                />
+                <StatCard
+                    label="This month (est.)"
+                    value={
+                        usage ? money(usage.estimatedCostUsd) : "—"
+                    }
+                    onClick={() =>
+                        router.push(`/organizations/${organization.id}/usage`)
+                    }
+                />
+            </div>
+
+            <AccountSection className="mb-8 space-y-3 p-4">
+                <p className="text-sm font-medium text-gray-900">
+                    How access works
+                </p>
+                <p className="text-sm text-gray-600">
+                    Organization membership is not project access. Add each
+                    person to the matters they should see. Owners and admins
+                    can also do that from a member’s page.
+                </p>
+                <p className="text-sm text-gray-600">
+                    {organization.admins_can_access_all_projects
+                        ? "Admins can currently open every project in this organization."
+                        : "Admins cannot open every project. That setting is off."}{" "}
+                    {usage?.monthlyBudgetUsd == null
+                        ? "There is no monthly budget cap."
+                        : `Monthly budget is ${money(usage.monthlyBudgetUsd)} (${usage.budgetEnforcement}).`}
+                </p>
+                <p className="text-sm text-gray-600">
+                    {(overview?.configuredKeyCount ?? 0) === 0
+                        ? "No organization API keys are saved yet. Org projects will not fall back to personal keys."
+                        : `${overview?.configuredKeyCount} organization API key${
+                              (overview?.configuredKeyCount ?? 0) === 1
+                                  ? ""
+                                  : "s"
+                          } configured.`}
+                </p>
+            </AccountSection>
+
+            <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-800">People</h3>
+                <button
+                    type="button"
+                    className="text-xs text-gray-500 hover:text-gray-800"
+                    onClick={() =>
+                        router.push(`/organizations/${organization.id}/members`)
+                    }
+                >
+                    View all
+                </button>
+            </div>
+            <AccountSection className="mb-8">
+                {(overview?.members ?? []).length === 0 ? (
+                    <p className="px-4 py-6 text-sm text-gray-500">
+                        Loading members…
                     </p>
-                </div>
-                {manage && (
-                    <div className="flex justify-end">
-                        <Button
+                ) : (
+                    overview?.members.map((member) => (
+                        <button
+                            key={member.user_id}
                             type="button"
-                            className={accountGlassPrimaryButtonClassName}
-                            onClick={() => void save()}
-                            disabled={saving || !name.trim()}
+                            onClick={() =>
+                                router.push(
+                                    `/organizations/${organization.id}/members/${member.user_id}`,
+                                )
+                            }
+                            className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left last:border-b-0 hover:bg-gray-50/80"
                         >
-                            {saving ? "Saving…" : saved ? "Saved" : "Save"}
-                        </Button>
-                    </div>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-700">
+                                <Users className="h-3.5 w-3.5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm text-gray-900">
+                                    {member.display_name ||
+                                        member.email ||
+                                        "Member"}
+                                </p>
+                                <p className="truncate text-xs text-gray-500">
+                                    {member.email}
+                                </p>
+                            </div>
+                            <span className="text-xs capitalize text-gray-500">
+                                {member.role}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                                {member.project_count ?? 0} projects
+                            </span>
+                        </button>
+                    ))
                 )}
             </AccountSection>
 
-            {organization.role === "owner" && (
-                <AccountSection className="mt-8 p-4">
-                    <h3 className="text-sm font-medium text-gray-900">
-                        Delete organization
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Projects in this organization must be moved or deleted
-                        first.
+            <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-800">
+                    Recent activity
+                </h3>
+                <button
+                    type="button"
+                    className="text-xs text-gray-500 hover:text-gray-800"
+                    onClick={() =>
+                        router.push(
+                            `/organizations/${organization.id}/activity`,
+                        )
+                    }
+                >
+                    View all
+                </button>
+            </div>
+            <AccountSection className="mb-8">
+                {(overview?.recentActivity ?? []).length === 0 ? (
+                    <p className="px-4 py-6 text-sm text-gray-500">
+                        Member, invite, and project-access changes will appear
+                        here.
                     </p>
-                    <Button
-                        type="button"
-                        className={`${accountGlassDangerOutlineButtonClassName} mt-4`}
-                        onClick={() => setDeleteOpen(true)}
-                    >
-                        Delete organization
-                    </Button>
-                </AccountSection>
-            )}
+                ) : (
+                    overview?.recentActivity.map((event) => (
+                        <div
+                            key={event.id}
+                            className="border-b border-gray-100 px-4 py-3 last:border-b-0"
+                        >
+                            <p className="text-sm text-gray-800">
+                                {organizationActivityLabel(event)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                {formatActivityWhen(event.created_at)}
+                            </p>
+                        </div>
+                    ))
+                )}
+            </AccountSection>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Shortcut
+                    icon={Users}
+                    label="Members"
+                    onClick={() =>
+                        router.push(`/organizations/${organization.id}/members`)
+                    }
+                />
+                <Shortcut
+                    icon={FolderOpen}
+                    label="Projects"
+                    onClick={() =>
+                        router.push(
+                            `/organizations/${organization.id}/projects`,
+                        )
+                    }
+                />
+                <Shortcut
+                    icon={KeyRound}
+                    label="API keys"
+                    onClick={() =>
+                        router.push(
+                            `/organizations/${organization.id}/api-keys`,
+                        )
+                    }
+                />
+            </div>
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-            <ConfirmPopup
-                open={deleteOpen}
-                title="Delete this organization?"
-                message="This cannot be undone. Members will lose access immediately."
-                confirmLabel="Delete"
-                onCancel={() => setDeleteOpen(false)}
-                onConfirm={() => void handleDelete()}
-            />
         </div>
+    );
+}
+
+function StatCard({
+    label,
+    value,
+    onClick,
+}: {
+    label: string;
+    value: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="rounded-xl border border-white/70 bg-white/55 px-4 py-3 text-left shadow-[0_3px_9px_rgba(15,23,42,0.03)] backdrop-blur-2xl hover:bg-white/80"
+        >
+            <p className="text-xs text-gray-500">{label}</p>
+            <p className="mt-1 text-lg font-medium text-gray-900">{value}</p>
+        </button>
+    );
+}
+
+function Shortcut({
+    icon: Icon,
+    label,
+    onClick,
+}: {
+    icon: typeof Users;
+    label: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex items-center gap-2 rounded-xl border border-white/70 bg-white/55 px-4 py-3 text-sm text-gray-800 hover:bg-white/80"
+        >
+            <Icon className="h-4 w-4 text-gray-500" />
+            {label}
+        </button>
     );
 }

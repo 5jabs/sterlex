@@ -1,4 +1,6 @@
 import type { createServerSupabase } from "./supabase";
+import { recordOrganizationActivity } from "./organizationActivity";
+import { isOrgAdmin, type OrgRole } from "./organizationRoles";
 import { getMembership } from "./organizations";
 import {
     findProfileUserByEmail,
@@ -34,6 +36,15 @@ export type ProjectAccessEvent = {
     actor_email: string | null;
     target_display_name: string | null;
 };
+
+export function canManageProjectRoster(args: {
+    actorUserId: string;
+    projectOwnerId: string;
+    actorOrgRole?: OrgRole | null;
+}): boolean {
+    if (args.actorUserId === args.projectOwnerId) return true;
+    return isOrgAdmin(args.actorOrgRole);
+}
 
 export function assertCanAddProjectMember(args: {
     projectOwnerId: string;
@@ -287,6 +298,16 @@ export async function addProjectMember(
         targetUserId: target.id,
         targetEmail: target.email || null,
     });
+    if (args.projectOrganizationId) {
+        await recordOrganizationActivity(db, {
+            organizationId: args.projectOrganizationId,
+            actorUserId: args.actorUserId,
+            action: "project_member_added",
+            targetUserId: target.id,
+            targetEmail: target.email || null,
+            projectId: args.projectId,
+        });
+    }
 
     return {
         id: data.id as string,
@@ -345,6 +366,21 @@ export async function removeProjectMember(
         targetUserId: args.targetUserId,
         targetEmail: normalizeEmail(profile?.email) || null,
     });
+    const { data: project } = await db
+        .from("projects")
+        .select("organization_id")
+        .eq("id", args.projectId)
+        .maybeSingle();
+    if (project?.organization_id) {
+        await recordOrganizationActivity(db, {
+            organizationId: project.organization_id as string,
+            actorUserId: args.actorUserId,
+            action: "project_member_removed",
+            targetUserId: args.targetUserId,
+            targetEmail: normalizeEmail(profile?.email) || null,
+            projectId: args.projectId,
+        });
+    }
 }
 
 export async function replaceProjectMembersByEmails(
