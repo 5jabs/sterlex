@@ -6,13 +6,26 @@ import {
     OPENAI_LOW_MODELS,
     type UserApiKeys,
 } from "./llm";
-import { getUserApiKeys as getStoredUserApiKeys } from "./userApiKeys";
+import {
+    envApiKeys,
+    getStoredUserApiKeysOnly,
+} from "./userApiKeys";
+import { resolveApiKeys } from "./apiKeyResolution";
+import {
+    getOrganizationApiKeys,
+    organizationEnvFallbackAllowed,
+} from "./organizationApiKeys";
 
 export type UserModelSettings = {
     title_model: string;
     tabular_model: string;
     legal_research_us: boolean;
     api_keys: UserApiKeys;
+};
+
+export type ModelSettingsOptions = {
+    organizationId?: string | null;
+    projectId?: string | null;
 };
 
 // Title generation is a lightweight task — always routed to the cheapest model
@@ -26,9 +39,24 @@ function resolveTitleModel(apiKeys: UserApiKeys): string {
     return DEFAULT_TITLE_MODEL;
 }
 
+async function resolveOrganizationId(
+    db: ReturnType<typeof createServerSupabase>,
+    options?: ModelSettingsOptions,
+): Promise<string | null> {
+    if (options?.organizationId) return options.organizationId;
+    if (!options?.projectId) return null;
+    const { data } = await db
+        .from("projects")
+        .select("organization_id")
+        .eq("id", options.projectId)
+        .maybeSingle();
+    return (data?.organization_id as string | null) ?? null;
+}
+
 export async function getUserModelSettings(
     userId: string,
     db?: ReturnType<typeof createServerSupabase>,
+    options?: ModelSettingsOptions,
 ): Promise<UserModelSettings> {
     const client = db ?? createServerSupabase();
     const { data } = await client
@@ -36,22 +64,34 @@ export async function getUserModelSettings(
         .select("title_model, tabular_model, legal_research_us")
         .eq("user_id", userId)
         .single();
-    const api_keys = await getStoredUserApiKeys(userId, client);
+    const organizationId = await resolveOrganizationId(client, options);
+    const userKeys = await getStoredUserApiKeysOnly(userId, client);
+    const orgKeys = organizationId
+        ? await getOrganizationApiKeys(organizationId, client)
+        : {};
+    const resolved = resolveApiKeys({
+        context: organizationId ? "organization" : "personal",
+        envKeys: envApiKeys(),
+        userKeys,
+        orgKeys,
+        allowEnvInOrganization: organizationEnvFallbackAllowed(),
+    });
 
     return {
-        title_model: resolveModel(data?.title_model, resolveTitleModel(api_keys)),
+        title_model: resolveModel(data?.title_model, resolveTitleModel(resolved.keys)),
         tabular_model: resolveModel(data?.tabular_model, DEFAULT_TABULAR_MODEL),
         legal_research_us:
             (data as { legal_research_us?: boolean | null } | null)
                 ?.legal_research_us !== false,
-        api_keys,
+        api_keys: resolved.keys,
     };
 }
 
 export async function getUserApiKeys(
     userId: string,
     db?: ReturnType<typeof createServerSupabase>,
+    options?: ModelSettingsOptions,
 ): Promise<UserApiKeys> {
-    const client = db ?? createServerSupabase();
-    return getStoredUserApiKeys(userId, client);
+    const settings = await getUserModelSettings(userId, db, options);
+    return settings.api_keys;
 }

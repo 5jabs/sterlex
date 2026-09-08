@@ -420,6 +420,7 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
         const { title_model, api_keys } = await getUserModelSettings(
             userId,
             db,
+            { projectId: chat.project_id },
         );
         const titleText = await completeText({
             model: title_model,
@@ -580,7 +581,9 @@ chatRouter.post("/", requireAuth, async (req, res) => {
     const {
         api_keys: apiKeys,
         legal_research_us: legalResearchUs,
-    } = await getUserModelSettings(userId, db);
+    } = await getUserModelSettings(userId, db, {
+        projectId: resolvedProjectId,
+    });
     const apiMessages = buildMessages(
         enrichedMessages,
         docAvailability,

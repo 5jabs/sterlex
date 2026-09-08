@@ -13,6 +13,7 @@ import { AddUserInput } from "../shared/AddUserInput";
 import type { Project } from "../shared/types";
 import type { UserLookupResult } from "@/app/lib/sterlexApi";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { Modal } from "../modals/Modal";
 import { ModalFieldLabel } from "../modals/ModalFieldLabel";
 import { ModalTextInput } from "../modals/ModalTextInput";
@@ -36,6 +37,7 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
     const [error, setError] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { user } = useAuth();
+    const { activeOrganizationId } = useOrganization();
     const ownEmail = user?.email?.trim().toLowerCase() ?? null;
     const formId = "new-project-modal-form";
 
@@ -79,6 +81,7 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
                           .map((user) => user.email)
                           .filter((email) => email !== ownEmail)
                     : sharedUsers.map((user) => user.email),
+                activeOrganizationId,
             );
             await Promise.all([
                 ...[...selectedDocIds].map((id) => addDocumentToProject(project.id, id).catch(() => {})),

@@ -13,6 +13,7 @@ export interface Folder {
 export interface Project {
   id: string;
   user_id: string;
+  organization_id?: string | null;
   is_owner?: boolean;
   owner_display_name?: string | null;
   owner_email?: string | null;

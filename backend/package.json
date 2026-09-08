@@ -2,11 +2,12 @@
   "name": "mike-backend",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "test": "tsx --test src/lib/*.test.ts"
+    },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
     "@aws-sdk/client-s3": "^3.787.0",

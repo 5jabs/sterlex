@@ -175,7 +175,7 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
     const {
         api_keys: apiKeys,
         legal_research_us: legalResearchUs,
-    } = await getUserModelSettings(userId, db);
+    } = await getUserModelSettings(userId, db, { projectId });
     const apiMessages = buildMessages(
         messagesForLLM,
         docAvailability,
