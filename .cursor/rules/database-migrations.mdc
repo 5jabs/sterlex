@@ -1,0 +1,58 @@
+---
+description: How to make database structure changes in this repo (Supabase migrations, auto-deployed via GitHub Actions).
+globs:
+alwaysApply: true
+---
+
+# Database changes go through Supabase migrations
+
+Any change that touches **database structure** must be delivered as a new
+Supabase migration file — never as a hand-applied SQL statement against a
+remote database, and never by asking a human to run SQL manually.
+
+This applies to (non-exhaustive): creating/altering/dropping tables, columns,
+indexes, constraints, sequences, enums, extensions, views, functions/RPCs,
+triggers, RLS policies, and role GRANTs/REVOKEs.
+
+## Where migrations live
+
+- Automated, CI-deployed migrations live in **`supabase/migrations/`**.
+- Filenames use the Supabase CLI format `<YYYYMMDDHHMMSS>_<name>.sql` and are
+  applied in ascending timestamp order.
+
+Note: `backend/migrations/*.sql` and `backend/schema.sql` are the upstream
+project's manually-applied reference set (see `README.md`). They are **not**
+part of the automated pipeline. Put automated schema changes in
+`supabase/migrations/`.
+
+## Deployment is automated — do not apply schema changes by hand
+
+GitHub Actions applies migrations automatically with `supabase db push`; there
+is no need to run migrations manually or to touch a remote database directly:
+
+- Push to `dev` → `.github/workflows/supabase-dev.yml` deploys to the dev
+  Supabase project.
+- Push to `main` → `.github/workflows/supabase-prod.yml` deploys to production.
+
+So: to change the schema, add a migration and let it merge/deploy. Do not
+open the Supabase SQL editor, run `psql`, or otherwise mutate a remote database
+out of band.
+
+## How to author a migration
+
+Prefer the Supabase CLI so the timestamped filename is generated correctly:
+
+- `supabase migration new <short_snake_case_name>` then edit the generated file, or
+- `supabase db diff -f <short_snake_case_name>` to capture local schema changes.
+
+Guidelines:
+
+- Migrations are **forward-only and immutable once merged/deployed**. Never edit,
+  rename, or reorder an existing migration that may already be applied — add a
+  new migration to make further changes.
+- Write **idempotent/guarded** SQL where practical (`if exists` / `if not exists`,
+  `create or replace`) so a re-run is safe.
+- Include any required RLS policy and GRANT/REVOKE updates in the **same**
+  migration as the table/column change they protect.
+- Land application code that depends on a schema change together with (or after)
+  its migration, so deploys stay consistent.
