@@ -10,13 +10,16 @@ import {
     type ReactNode,
 } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import {
     createChat,
     deleteChat,
     listChats,
+    listProjects,
     renameChat,
 } from "@/app/lib/sterlexApi";
 import type { Chat, Message } from "@/app/components/shared/types";
+import { filterByWorkspace } from "@/app/lib/workspaceScope";
 
 interface ChatHistoryContextType {
     chats: Chat[] | null;
@@ -46,7 +49,10 @@ const CHAT_LIMIT_INCREMENT = 10;
 
 export function ChatHistoryProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
+    const { activeOrganizationId, loading: orgLoading } = useOrganization();
     const [chats, setChats] = useState<Chat[] | null>(null);
+    const [workspaceProjectIds, setWorkspaceProjectIds] =
+        useState<Set<string> | null>(null);
     const [chatLimit, setChatLimit] = useState(INITIAL_CHAT_LIMIT);
     const [hasMoreChats, setHasMoreChats] = useState(false);
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -77,11 +83,44 @@ export function ChatHistoryProvider({ children }: { children: ReactNode }) {
             setChatLimit(INITIAL_CHAT_LIMIT);
             setHasMoreChats(false);
             setCurrentChatId(null);
+            setWorkspaceProjectIds(null);
             return;
         }
 
         void loadChats();
     }, [user, loadChats]);
+
+    useEffect(() => {
+        if (!user || orgLoading) {
+            setWorkspaceProjectIds(null);
+            return;
+        }
+        setWorkspaceProjectIds(null);
+        let cancelled = false;
+        listProjects({ organizationId: activeOrganizationId })
+            .then((projects) => {
+                if (!cancelled) {
+                    setWorkspaceProjectIds(
+                        new Set(projects.map((project) => project.id)),
+                    );
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setWorkspaceProjectIds(new Set());
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [user, orgLoading, activeOrganizationId]);
+
+    const scopedChats = useMemo(() => {
+        if (!chats || workspaceProjectIds === null) return null;
+        return filterByWorkspace(
+            chats,
+            activeOrganizationId == null,
+            workspaceProjectIds,
+        );
+    }, [activeOrganizationId, chats, workspaceProjectIds]);
 
     const loadMoreChats = useCallback(() => {
         setChatLimit((prev) => prev + CHAT_LIMIT_INCREMENT);
@@ -169,7 +208,7 @@ export function ChatHistoryProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo(
         () => ({
-            chats,
+            chats: scopedChats,
             hasMoreChats,
             currentChatId,
             setCurrentChatId,
@@ -183,7 +222,7 @@ export function ChatHistoryProvider({ children }: { children: ReactNode }) {
             deleteChat: deleteChatFn,
         }),
         [
-            chats,
+            scopedChats,
             hasMoreChats,
             currentChatId,
             loadChats,

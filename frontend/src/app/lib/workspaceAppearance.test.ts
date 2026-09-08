@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { workspaceAccent, workspaceInitials } from "./workspaceAppearance";
+import { personalWorkspaceName, workspaceAccent, workspaceInitials } from "./workspaceAppearance";
 
 describe("workspace appearance", () => {
     it("uses two letters from a multi-word name", () => {
@@ -13,5 +13,11 @@ describe("workspace appearance", () => {
 
     it("picks a stable accent for the same key", () => {
         assert.deepEqual(workspaceAccent("acme"), workspaceAccent("acme"));
+    });
+
+    it("uses the display name, then email local-part, for personal", () => {
+        assert.equal(personalWorkspaceName("Ana Costa", "ana@firm.com"), "Ana Costa");
+        assert.equal(personalWorkspaceName("  ", "ana@firm.com"), "ana");
+        assert.equal(personalWorkspaceName(null, null), "Personal");
     });
 });

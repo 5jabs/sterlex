@@ -43,7 +43,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     const { profile } = useUserProfile();
     const {
         activeOrganizationId,
-        activeOrganization,
+        enteredOrganization,
         loading: orgLoading,
     } = useOrganization();
     const { chats, hasMoreChats, loadMoreChats, setCurrentChatId } =
@@ -256,12 +256,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                     );
                 })}
 
-                {activeOrganization && (
+                {enteredOrganization && (
                     <div className="py-1 px-3">
                         <button
                             onClick={() => {
                                 router.push(
-                                    `/organizations/${activeOrganization.id}`,
+                                    `/organizations/${enteredOrganization.id}`,
                                 );
                                 closeIfMobile();
                             }}
@@ -269,7 +269,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                             className={cn(
                                 "w-full h-11 flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
                                 pathname.startsWith(
-                                    `/organizations/${activeOrganization.id}`,
+                                    `/organizations/${enteredOrganization.id}`,
                                 )
                                     ? "bg-gray-200/60 text-gray-900"
                                     : "text-gray-700 hover:bg-gray-100",
@@ -279,7 +279,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                             <Building2
                                 className={`h-4 w-4 flex-shrink-0 ${
                                     pathname.startsWith(
-                                        `/organizations/${activeOrganization.id}`,
+                                        `/organizations/${enteredOrganization.id}`,
                                     )
                                         ? "text-gray-900"
                                         : "text-black"
@@ -337,7 +337,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                                     : ""
                                             }`}
                                         >
-                                            No projects yet
+                                            No projects in this workspace yet
                                         </div>
                                     ) : (
                                         <div
@@ -430,7 +430,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                                 : ""
                                         }`}
                                     >
-                                        No chats yet
+                                        No chats in this workspace yet
                                     </div>
                                 ) : (
                                     <>

@@ -12,6 +12,7 @@ import {
     uploadStandaloneDocument,
 } from "@/app/lib/sterlexApi";
 import { FileDirectory } from "../shared/FileDirectory";
+import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { Modal } from "../modals/Modal";
 import { ModalFieldLabel } from "../modals/ModalFieldLabel";
 import { ModalSelect } from "../modals/ModalSelect";
@@ -48,6 +49,8 @@ export function NewTRModal({
     projectCmNumber,
 }: Props) {
     const isProjectMode = fixedProjectDocs !== undefined;
+    const { activeOrganizationId } = useOrganization();
+    const inOrganization = Boolean(activeOrganizationId);
     const [step, setStep] = useState<"details" | "documents">("details");
     const [title, setTitle] = useState("");
     const [underProject, setUnderProject] = useState(false);
@@ -108,6 +111,10 @@ export function NewTRModal({
             })
             .finally(() => setLoadingWorkflows(false));
 
+        if (inOrganization) {
+            setUnderProject(true);
+        }
+
         if (isProjectMode) {
             setSelectedDocIds(
                 new Set((fixedProjectDocs ?? []).map((d) => d.id)),
@@ -119,7 +126,12 @@ export function NewTRModal({
         // /projects only returns counts, not the documents array — fetch
         // each project in parallel so FileDirectory can render the docs
         // when the user expands a folder.
-        Promise.all([listStandaloneDocuments(), listProjects()])
+        Promise.all([
+            inOrganization
+                ? Promise.resolve([])
+                : listStandaloneDocuments(),
+            listProjects({ organizationId: activeOrganizationId }),
+        ])
             .then(async ([docs, projs]) => {
                 setStandaloneDocs(
                     [...docs].sort((a, b) =>
@@ -143,7 +155,7 @@ export function NewTRModal({
     function handleClose() {
         setStep("details");
         setTitle("");
-        setUnderProject(false);
+        setUnderProject(inOrganization);
         setSelectedProjectId("");
         setProjectDocs([]);
         setStandaloneDocs([]);
@@ -384,6 +396,7 @@ export function NewTRModal({
                                 <ModalFieldLabel as="p">
                                     Project
                                 </ModalFieldLabel>
+                                {!inOrganization && (
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -408,6 +421,7 @@ export function NewTRModal({
                                         Create under a project
                                     </span>
                                 </button>
+                                )}
 
                                 {underProject && (
                                     <ModalSelect

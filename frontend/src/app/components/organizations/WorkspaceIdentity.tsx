@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftRight } from "lucide-react";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { WorkspaceAvatar } from "@/app/components/organizations/WorkspaceAvatar";
+import { useWorkspaceLabel } from "@/app/hooks/useWorkspaceLabel";
 import { cn } from "@/app/lib/utils";
 
 export function WorkspaceIdentity({
@@ -13,20 +14,12 @@ export function WorkspaceIdentity({
     collapsed?: boolean;
     compact?: boolean;
 }) {
-    const {
-        activeOrganization,
-        hasEnteredWorkspace,
-        leaveWorkspace,
-        pendingInvites,
-    } = useOrganization();
+    const { hasEnteredWorkspace, leaveWorkspace, pendingInvites } =
+        useOrganization();
+    const { name, detail } = useWorkspaceLabel();
     const router = useRouter();
 
     if (!hasEnteredWorkspace) return null;
-
-    const name = activeOrganization?.name ?? "Personal";
-    const detail = activeOrganization
-        ? activeOrganization.role
-        : "Just you";
 
     function switchWorkspace() {
         leaveWorkspace();
@@ -67,13 +60,12 @@ export function WorkspaceIdentity({
                 </p>
                 <p className="truncate text-[11px] capitalize text-gray-500">
                     {detail}
-                    <span className="text-gray-400 group-hover:text-gray-600">
-                        {" "}
-                        · Switch
-                    </span>
                 </p>
             </div>
-            <ArrowLeftRight className="h-3.5 w-3.5 shrink-0 text-gray-400 group-hover:text-gray-700" />
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-gray-500 group-hover:bg-white group-hover:text-gray-800">
+                <ArrowLeftRight className="h-3 w-3" />
+                Switch
+            </span>
         </button>
     );
 }

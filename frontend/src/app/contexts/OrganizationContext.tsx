@@ -35,6 +35,7 @@ type OrganizationContextValue = {
     sessionHydrated: boolean;
     hasEnteredWorkspace: boolean;
     enteredWorkspaceId: WorkspaceSessionId | null;
+    enteredOrganization: Organization | null;
     reload: () => Promise<void>;
     switchOrganization: (organizationId: string | null) => Promise<void>;
     createOrganization: (name: string) => Promise<Organization>;
@@ -154,6 +155,18 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         [organizations, activeOrganizationId],
     );
 
+    const enteredOrganization = useMemo(() => {
+        if (
+            !enteredWorkspaceId ||
+            enteredWorkspaceId === PERSONAL_WORKSPACE_ID
+        ) {
+            return null;
+        }
+        return (
+            organizations.find((org) => org.id === enteredWorkspaceId) ?? null
+        );
+    }, [enteredWorkspaceId, organizations]);
+
     const value = useMemo(
         () => ({
             organizations,
@@ -164,6 +177,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             sessionHydrated,
             hasEnteredWorkspace: enteredWorkspaceId !== null,
             enteredWorkspaceId,
+            enteredOrganization,
             reload,
             switchOrganization,
             createOrganization,
@@ -178,6 +192,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
             loading,
             sessionHydrated,
             enteredWorkspaceId,
+            enteredOrganization,
             reload,
             switchOrganization,
             createOrganization,

@@ -35,7 +35,7 @@ export function WorkspaceGate({ children }: { children: React.ReactNode }) {
 
     if (authLoading || !sessionHydrated || !ready) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-screen items-center justify-center bg-[#f4f2ed]">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
             </div>
         );

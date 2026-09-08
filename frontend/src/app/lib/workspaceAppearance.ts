@@ -24,3 +24,10 @@ export function workspaceAccent(key: string) {
     }
     return ACCENTS[hash % ACCENTS.length];
 }
+
+export function personalWorkspaceName(
+    displayName: string | null | undefined,
+    email: string | null | undefined,
+) {
+    return displayName?.trim() || email?.split("@")[0] || "Personal";
+}

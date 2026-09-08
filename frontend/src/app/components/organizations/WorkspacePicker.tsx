@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { SiteLogo } from "@/app/components/site-logo";
 import { WorkspaceAvatar } from "@/app/components/organizations/WorkspaceAvatar";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
+import { personalWorkspaceName } from "@/app/lib/workspaceAppearance";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { acceptPendingOrganizationInvite } from "@/app/lib/sterlexApi";
 import { cn } from "@/app/lib/utils";
+import { stepPickerIndex } from "@/app/lib/workspaceScope";
 
 export function WorkspacePicker() {
     const router = useRouter();
-    const { isAuthenticated, authLoading, user } = useAuth();
+    const { isAuthenticated, authLoading, user, signOut } = useAuth();
     const { profile } = useUserProfile();
     const {
         organizations,
@@ -31,6 +33,7 @@ export function WorkspacePicker() {
     const [createError, setCreateError] = useState<string | null>(null);
     const [inviteError, setInviteError] = useState<string | null>(null);
     const [inviteBusy, setInviteBusy] = useState<string | null>(null);
+    const [focusIndex, setFocusIndex] = useState(0);
 
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
@@ -38,21 +41,79 @@ export function WorkspacePicker() {
         }
     }, [authLoading, isAuthenticated, router]);
 
-    const personalName =
-        profile?.displayName?.trim() ||
-        user?.email?.split("@")[0] ||
-        "Personal";
+    const personalName = personalWorkspaceName(
+        profile?.displayName,
+        user?.email,
+    );
 
-    async function enter(organizationId: string | null) {
-        const key = organizationId ?? "personal";
-        setEnteringId(key);
-        try {
-            await enterWorkspace(organizationId);
-            router.push("/projects");
-        } finally {
-            setEnteringId(null);
+    const tiles = useMemo(() => {
+        const items: Array<{
+            id: string;
+            organizationId: string | null;
+        }> = [
+            { id: "personal", organizationId: null },
+            ...organizations.map((org) => ({
+                id: org.id,
+                organizationId: org.id,
+            })),
+        ];
+        if (!creating) items.push({ id: "add", organizationId: null });
+        return items;
+    }, [creating, organizations]);
+
+    useEffect(() => {
+        if (focusIndex >= tiles.length) setFocusIndex(0);
+    }, [focusIndex, tiles.length]);
+
+    const enter = useCallback(
+        async (organizationId: string | null) => {
+            const key = organizationId ?? "personal";
+            setEnteringId(key);
+            try {
+                await enterWorkspace(organizationId);
+                router.push("/projects");
+            } catch {
+                setEnteringId(null);
+            }
+        },
+        [enterWorkspace, router],
+    );
+
+    useEffect(() => {
+        function onKey(event: KeyboardEvent) {
+            if (creating) return;
+            if (enteringId) return;
+            const target = event.target as HTMLElement | null;
+            if (
+                target &&
+                (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+            ) {
+                return;
+            }
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                event.preventDefault();
+                setFocusIndex((index) =>
+                    stepPickerIndex(index, 1, tiles.length),
+                );
+            } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                event.preventDefault();
+                setFocusIndex((index) =>
+                    stepPickerIndex(index, -1, tiles.length),
+                );
+            } else if (event.key === "Enter") {
+                const tile = tiles[focusIndex];
+                if (!tile) return;
+                event.preventDefault();
+                if (tile.id === "add") {
+                    setCreating(true);
+                    return;
+                }
+                void enter(tile.organizationId);
+            }
         }
-    }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [creating, enter, enteringId, focusIndex, tiles]);
 
     async function create() {
         if (!newName.trim()) return;
@@ -82,65 +143,141 @@ export function WorkspacePicker() {
         }
     }
 
+    async function handleSignOut() {
+        await signOut();
+        router.replace("/login");
+    }
+
+    const enteringName =
+        enteringId === "personal"
+            ? personalName
+            : enteringId === "create"
+              ? newName.trim() || "organization"
+              : organizations.find((org) => org.id === enteringId)?.name;
+
     if (authLoading || !sessionHydrated || !isAuthenticated) {
         return <PickerShell />;
     }
 
     return (
-        <PickerShell>
+        <PickerShell enteringName={enteringId ? enteringName : null}>
             <header className="mb-14 text-center md:mb-20">
                 <SiteLogo size="lg" className="text-4xl md:text-5xl" />
                 <h2 className="mt-10 font-serif text-3xl font-medium tracking-tight text-gray-950 md:text-5xl">
-                    Where are you working?
+                    Who&apos;s working?
                 </h2>
                 <p className="mx-auto mt-3 max-w-md text-sm text-gray-500 md:text-base">
-                    Choose a workspace to enter. Personal is only yours.
-                    Organizations keep the firm’s matters together.
+                    Choose a workspace. You&apos;ll only see its matters until
+                    you switch.
                 </p>
             </header>
 
             <div className="mx-auto flex w-full max-w-6xl snap-x snap-mandatory gap-8 overflow-x-auto px-2 pb-4 [scrollbar-width:none] md:flex-wrap md:justify-center md:overflow-visible md:px-0 [&::-webkit-scrollbar]:hidden">
                 <ProfileTile
-                    name="Personal"
-                    label={personalName}
-                    caption="Just you"
+                    name={personalName}
+                    caption={
+                        activeOrganizationId == null ? "Last used" : "Personal"
+                    }
                     delay={0}
                     active={activeOrganizationId == null}
+                    focused={focusIndex === 0 && !creating}
                     busy={enteringId === "personal"}
                     onClick={() => void enter(null)}
+                    onFocus={() => setFocusIndex(0)}
                 />
                 {organizations.map((org, index) => (
                     <ProfileTile
                         key={org.id}
                         name={org.name}
-                        caption={org.role}
+                        caption={
+                            activeOrganizationId === org.id
+                                ? "Last used"
+                                : org.role
+                        }
                         delay={index + 1}
                         active={activeOrganizationId === org.id}
+                        focused={focusIndex === index + 1 && !creating}
                         busy={enteringId === org.id}
                         onClick={() => void enter(org.id)}
+                        onFocus={() => setFocusIndex(index + 1)}
                     />
                 ))}
-                {creating ? (
-                    <CreateTile
-                        name={newName}
-                        onChange={setNewName}
-                        onCancel={() => {
-                            setCreating(false);
-                            setNewName("");
-                            setCreateError(null);
-                        }}
-                        onCreate={() => void create()}
-                        busy={enteringId === "create"}
-                        error={createError}
-                        delay={organizations.length + 1}
-                    />
-                ) : (
+                {!creating && (
                     <AddTile
                         delay={organizations.length + 1}
+                        focused={
+                            focusIndex === organizations.length + 1 && !creating
+                        }
                         onClick={() => setCreating(true)}
+                        onFocus={() =>
+                            setFocusIndex(organizations.length + 1)
+                        }
                     />
                 )}
             </div>
+
+            {creating && (
+                <form
+                    className="workspace-tile mx-auto mt-10 w-full max-w-md rounded-3xl border border-white/80 bg-white/70 p-6 text-left shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        void create();
+                    }}
+                >
+                    <p className="font-serif text-xl text-gray-950">
+                        New organization
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500">
+                        A shared workspace for the firm&apos;s matters. You
+                        become the owner.
+                    </p>
+                    <input
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                                setCreating(false);
+                                setNewName("");
+                                setCreateError(null);
+                            }
+                        }}
+                        placeholder="Firm name"
+                        autoFocus
+                        disabled={enteringId === "create"}
+                        className="mt-5 w-full rounded-2xl border border-gray-200/80 bg-white/80 px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-400"
+                    />
+                    <div className="mt-4 flex items-center gap-3">
+                        <button
+                            type="submit"
+                            disabled={
+                                enteringId === "create" || !newName.trim()
+                            }
+                            className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                        >
+                            {enteringId === "create"
+                                ? "Creating…"
+                                : "Create and enter"}
+                        </button>
+                        <button
+                            type="button"
+                            disabled={enteringId === "create"}
+                            onClick={() => {
+                                setCreating(false);
+                                setNewName("");
+                                setCreateError(null);
+                            }}
+                            className="text-sm text-gray-500 hover:text-gray-800"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    {createError && (
+                        <p className="mt-3 text-sm text-red-600">
+                            {createError}
+                        </p>
+                    )}
+                </form>
+            )}
 
             {pendingInvites.length > 0 && (
                 <section className="mx-auto mt-16 w-full max-w-xl text-center">
@@ -193,11 +330,30 @@ export function WorkspacePicker() {
                     Loading workspaces…
                 </p>
             )}
+
+            <footer className="mt-16 flex flex-col items-center gap-2 text-center">
+                <p className="hidden text-[11px] tracking-wide text-gray-400 md:block">
+                    Arrow keys to choose · Enter to continue
+                </p>
+                <button
+                    type="button"
+                    onClick={() => void handleSignOut()}
+                    className="text-xs text-gray-400 hover:text-gray-700"
+                >
+                    Sign out
+                </button>
+            </footer>
         </PickerShell>
     );
 }
 
-function PickerShell({ children }: { children?: React.ReactNode }) {
+function PickerShell({
+    children,
+    enteringName,
+}: {
+    children?: React.ReactNode;
+    enteringName?: string | null;
+}) {
     return (
         <div className="relative min-h-dvh overflow-hidden bg-[#f4f2ed]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.9),transparent_42%),radial-gradient(circle_at_80%_100%,rgba(92,74,58,0.08),transparent_36%)]" />
@@ -206,47 +362,59 @@ function PickerShell({ children }: { children?: React.ReactNode }) {
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700" />
                 )}
             </div>
+            {enteringName ? (
+                <div className="workspace-enter-overlay absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#f4f2ed]/88 backdrop-blur-md">
+                    <WorkspaceAvatar name={enteringName} size="xl" />
+                    <p className="mt-6 font-serif text-2xl text-gray-950">
+                        Entering {enteringName}
+                    </p>
+                </div>
+            ) : null}
         </div>
     );
 }
 
 function ProfileTile({
     name,
-    label,
     caption,
     delay,
     active,
+    focused,
     busy,
     onClick,
+    onFocus,
 }: {
     name: string;
-    label?: string;
     caption: string;
     delay: number;
     active?: boolean;
+    focused?: boolean;
     busy?: boolean;
     onClick: () => void;
+    onFocus: () => void;
 }) {
     return (
         <button
             type="button"
             onClick={onClick}
+            onFocus={onFocus}
+            onMouseEnter={onFocus}
             disabled={busy}
             style={{ animationDelay: `${120 + delay * 70}ms` }}
-            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-36"
+            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-40"
         >
             <div
                 className={cn(
-                    "rounded-[1.35rem] p-[3px] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.03]",
-                    active
+                    "rounded-[1.45rem] p-[3px] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04]",
+                    active || focused
                         ? "bg-gray-900/90"
                         : "bg-transparent group-hover:bg-gray-900/15",
                 )}
             >
                 <WorkspaceAvatar name={name} size="lg" />
             </div>
-            <span className="mt-4 max-w-full truncate text-sm font-medium text-gray-900">
-                {label || name}
+            <span className="mt-4 max-w-full truncate text-sm font-medium text-gray-900 transition-colors group-hover:text-gray-950">
+                {name}
             </span>
             <span className="mt-0.5 text-[11px] capitalize tracking-wide text-gray-500">
                 {busy ? "Entering…" : caption}
@@ -255,15 +423,32 @@ function ProfileTile({
     );
 }
 
-function AddTile({ delay, onClick }: { delay: number; onClick: () => void }) {
+function AddTile({
+    delay,
+    focused,
+    onClick,
+    onFocus,
+}: {
+    delay: number;
+    focused?: boolean;
+    onClick: () => void;
+    onFocus: () => void;
+}) {
     return (
         <button
             type="button"
             onClick={onClick}
+            onFocus={onFocus}
+            onMouseEnter={onFocus}
             style={{ animationDelay: `${120 + delay * 70}ms` }}
-            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-36"
+            className="workspace-tile group flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-40"
         >
-            <div className="flex h-[7.5rem] w-[7.5rem] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white/30 text-gray-400 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.03] group-hover:border-gray-500 group-hover:text-gray-700 md:h-36 md:w-36">
+            <div
+                className={cn(
+                    "flex h-[7.5rem] w-[7.5rem] items-center justify-center rounded-2xl border border-dashed bg-white/30 text-gray-400 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04] group-hover:border-gray-500 group-hover:text-gray-700 md:h-36 md:w-36",
+                    focused ? "border-gray-700 text-gray-700" : "border-gray-300",
+                )}
+            >
                 <Plus className="h-8 w-8" strokeWidth={1.5} />
             </div>
             <span className="mt-4 text-sm font-medium text-gray-700">
@@ -273,72 +458,5 @@ function AddTile({ delay, onClick }: { delay: number; onClick: () => void }) {
                 New firm workspace
             </span>
         </button>
-    );
-}
-
-function CreateTile({
-    name,
-    onChange,
-    onCancel,
-    onCreate,
-    busy,
-    error,
-    delay,
-}: {
-    name: string;
-    onChange: (value: string) => void;
-    onCancel: () => void;
-    onCreate: () => void;
-    busy: boolean;
-    error: string | null;
-    delay: number;
-}) {
-    return (
-        <div
-            style={{ animationDelay: `${120 + delay * 70}ms` }}
-            className="workspace-tile flex w-[7.5rem] shrink-0 snap-center flex-col items-center md:w-36"
-        >
-            <div className="flex h-[7.5rem] w-[7.5rem] items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white/80 md:h-36 md:w-36">
-                <WorkspaceAvatar
-                    name={name.trim() || "New"}
-                    size="lg"
-                />
-            </div>
-            <input
-                value={name}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") onCreate();
-                    if (e.key === "Escape") onCancel();
-                }}
-                placeholder="Firm name"
-                autoFocus
-                disabled={busy}
-                className="mt-4 w-full rounded-md border-0 bg-transparent px-1 text-center text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-            />
-            <div className="mt-1 flex gap-2 text-[11px]">
-                <button
-                    type="button"
-                    disabled={busy || !name.trim()}
-                    onClick={onCreate}
-                    className="text-gray-800 hover:underline disabled:text-gray-400"
-                >
-                    {busy ? "Creating…" : "Create"}
-                </button>
-                <button
-                    type="button"
-                    disabled={busy}
-                    onClick={onCancel}
-                    className="text-gray-400 hover:text-gray-600"
-                >
-                    Cancel
-                </button>
-            </div>
-            {error && (
-                <p className="mt-1 text-center text-[11px] text-red-600">
-                    {error}
-                </p>
-            )}
-        </div>
     );
 }
