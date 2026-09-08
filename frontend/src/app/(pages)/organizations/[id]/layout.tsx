@@ -47,22 +47,40 @@ export default function OrganizationSettingsLayout({
 
     const tabs = organization
         ? [
-              { href: `/organizations/${organization.id}`, label: "General" },
+              {
+                  href: `/organizations/${organization.id}`,
+                  label: "Overview",
+                  match: "exact" as const,
+              },
               {
                   href: `/organizations/${organization.id}/members`,
                   label: "Members",
+                  match: "prefix" as const,
               },
               {
                   href: `/organizations/${organization.id}/projects`,
                   label: "Projects",
+                  match: "prefix" as const,
+              },
+              {
+                  href: `/organizations/${organization.id}/activity`,
+                  label: "Activity",
+                  match: "prefix" as const,
               },
               {
                   href: `/organizations/${organization.id}/api-keys`,
                   label: "API Keys",
+                  match: "prefix" as const,
               },
               {
                   href: `/organizations/${organization.id}/usage`,
                   label: "Usage",
+                  match: "prefix" as const,
+              },
+              {
+                  href: `/organizations/${organization.id}/settings`,
+                  label: "Settings",
+                  match: "prefix" as const,
               },
           ]
         : [];
@@ -110,22 +128,11 @@ export default function OrganizationSettingsLayout({
                         >
                             <ul className="mb-0 flex gap-1 md:flex-col">
                                 {tabs.map((tab) => {
-                                    const active =
-                                        pathname === tab.href ||
-                                        (tab.href.endsWith("/members") &&
-                                            pathname.endsWith("/members")) ||
-                                        (tab.href.endsWith("/projects") &&
-                                            pathname.endsWith("/projects")) ||
-                                        (tab.href.endsWith("/api-keys") &&
-                                            pathname.endsWith("/api-keys")) ||
-                                        (tab.href.endsWith("/usage") &&
-                                            pathname.endsWith("/usage"));
-                                    const generalActive =
-                                        pathname ===
-                                        `/organizations/${organization.id}`;
-                                    const isActive = tab.label === "General"
-                                        ? generalActive
-                                        : active && tab.label !== "General";
+                                    const isActive =
+                                        tab.match === "exact"
+                                            ? pathname === tab.href
+                                            : pathname === tab.href ||
+                                              pathname.startsWith(`${tab.href}/`);
                                     return (
                                         <li key={tab.href}>
                                             <button

@@ -6,11 +6,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useOrganization } from "@/app/contexts/OrganizationContext";
 import { cn } from "@/app/lib/utils";
 import { CreateOrganizationModal } from "@/app/components/organizations/CreateOrganizationModal";
+import { PendingOrganizationInvites } from "@/app/components/organizations/PendingOrganizationInvites";
 
 export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
     const {
         organizations,
         activeOrganization,
+        pendingInvites,
         switchOrganization,
         loading,
     } = useOrganization();
@@ -53,6 +55,9 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
             </button>
             {open && (
                 <div className="absolute bottom-full left-1 right-1 z-50 mb-1 rounded-xl border border-white/70 bg-white/90 p-1 shadow-[0_6px_17px_rgba(15,23,42,0.1)] backdrop-blur-xl">
+                    {pendingInvites.length > 0 && (
+                        <PendingOrganizationInvites compact />
+                    )}
                     <button
                         type="button"
                         onClick={() => void selectWorkspace(null)}
@@ -100,7 +105,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
                             }}
                             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-white/70"
                         >
-                            Organization settings
+                            Organization
                         </button>
                     )}
                 </div>

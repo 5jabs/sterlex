@@ -17,6 +17,7 @@ import {
     isOrgRole,
 } from "./organizationRoles";
 import { slugifyOrganizationName, uniqueOrganizationSlug } from "./organizationSlug";
+import { recordOrganizationActivity } from "./organizationActivity";
 
 type Db = ReturnType<typeof createServerSupabase>;
 
@@ -173,6 +174,12 @@ export async function createOrganization(
     if (memberError) throw memberError;
 
     await setActiveOrganization(db, args.userId, organization.id);
+    await recordOrganizationActivity(db, {
+        organizationId: organization.id,
+        actorUserId: args.userId,
+        action: "organization_created",
+        metadata: { name },
+    });
     return {
         ...serializeOrg(organization as OrganizationRow),
         role: "owner" as const,
@@ -218,6 +225,23 @@ export async function updateOrganization(
         .single();
     if (error) throw error;
     return serializeOrg(data as OrganizationRow);
+}
+
+export async function recordOrganizationSettingsActivity(
+    db: Db,
+    args: {
+        organizationId: string;
+        actorUserId: string;
+        fields: string[];
+    },
+) {
+    if (args.fields.length === 0) return;
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId,
+        action: "settings_updated",
+        metadata: { fields: args.fields },
+    });
 }
 
 export async function deleteOrganization(db: Db, organizationId: string) {
@@ -341,6 +365,19 @@ export async function changeMemberRole(
         .select("*")
         .single();
     if (updateError) throw updateError;
+    const { data: targetProfile } = await db
+        .from("user_profiles")
+        .select("email")
+        .eq("user_id", args.targetUserId)
+        .maybeSingle();
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId,
+        action: "member_role_changed",
+        targetUserId: args.targetUserId,
+        targetEmail: (targetProfile?.email as string | null) ?? null,
+        metadata: { from: target.role, to: args.nextRole },
+    });
     return data;
 }
 
@@ -378,9 +415,17 @@ export async function removeOrganizationMember(
 
     const { data: profile } = await db
         .from("user_profiles")
-        .select("active_organization_id")
+        .select("active_organization_id, email")
         .eq("user_id", args.targetUserId)
         .maybeSingle();
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId,
+        action: "member_removed",
+        targetUserId: args.targetUserId,
+        targetEmail: (profile?.email as string | null) ?? null,
+        metadata: { role: target.role },
+    });
     if (profile?.active_organization_id === args.organizationId) {
         await setActiveOrganization(db, args.targetUserId, null);
     }
@@ -422,6 +467,18 @@ export async function transferOrganizationOwnership(
         .eq("organization_id", args.organizationId)
         .eq("user_id", args.actorUserId);
     if (actorError) throw actorError;
+    const { data: targetProfile } = await db
+        .from("user_profiles")
+        .select("email")
+        .eq("user_id", args.targetUserId)
+        .maybeSingle();
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId,
+        action: "ownership_transferred",
+        targetUserId: args.targetUserId,
+        targetEmail: (targetProfile?.email as string | null) ?? null,
+    });
 }
 
 export async function createOrganizationInvite(
@@ -481,6 +538,13 @@ export async function createOrganizationInvite(
         .select("*")
         .single();
     if (error) throw error;
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.invitedBy,
+        action: "invite_created",
+        targetEmail: email,
+        metadata: { role: args.role },
+    });
     return { invite: data as OrganizationInviteRow, token };
 }
 
@@ -508,19 +572,70 @@ export async function listOrganizationInvites(db: Db, organizationId: string) {
 
 export async function revokeOrganizationInvite(
     db: Db,
-    organizationId: string,
-    inviteId: string,
+    args: {
+        organizationId: string;
+        inviteId: string;
+        actorUserId?: string | null;
+    },
 ) {
     const { data, error } = await db
         .from("organization_invites")
         .update({ status: "revoked" })
-        .eq("id", inviteId)
-        .eq("organization_id", organizationId)
+        .eq("id", args.inviteId)
+        .eq("organization_id", args.organizationId)
         .eq("status", "pending")
-        .select("id")
+        .select("id, email")
         .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("Invite not found.");
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId ?? null,
+        action: "invite_revoked",
+        targetEmail: (data.email as string | null) ?? null,
+    });
+}
+
+export async function regenerateOrganizationInviteLink(
+    db: Db,
+    args: { organizationId: string; inviteId: string; actorUserId: string },
+) {
+    const { data: invite, error } = await db
+        .from("organization_invites")
+        .select("*")
+        .eq("id", args.inviteId)
+        .eq("organization_id", args.organizationId)
+        .eq("status", "pending")
+        .maybeSingle();
+    if (error) throw error;
+    if (!invite) throw new Error("Invite not found.");
+    if (inviteIsExpired(invite as OrganizationInviteRow)) {
+        await db
+            .from("organization_invites")
+            .update({ status: "expired" })
+            .eq("id", invite.id);
+        throw new Error("This invite is no longer valid.");
+    }
+    const { token, tokenHash } = newInviteToken();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_MS).toISOString();
+    const { data, error: updateError } = await db
+        .from("organization_invites")
+        .update({
+            token_hash: tokenHash,
+            expires_at: expiresAt,
+        })
+        .eq("id", invite.id)
+        .select("*")
+        .single();
+    if (updateError) throw updateError;
+    await recordOrganizationActivity(db, {
+        organizationId: args.organizationId,
+        actorUserId: args.actorUserId,
+        action: "invite_link_regenerated",
+        targetEmail: invite.email as string,
+        metadata: { role: invite.role },
+    });
+    return { invite: data as OrganizationInviteRow, token };
 }
 
 export async function getInviteByToken(db: Db, token: string) {
@@ -582,24 +697,16 @@ export async function listPendingInvitesForEmail(db: Db, email: string) {
     return invites;
 }
 
-export async function acceptOrganizationInvite(
+async function applyAcceptedInvite(
     db: Db,
-    args: { token: string; userId: string; userEmail: string },
+    invite: OrganizationInviteRow,
+    userId: string,
 ) {
-    const invite = await getInviteByToken(db, args.token);
-    if (!invite) throw new Error("Invite not found.");
-    if (invite.status !== "pending") {
-        throw new Error("This invite is no longer valid.");
-    }
-    const email = normalizeEmail(args.userEmail);
-    if (email !== invite.email) {
-        throw new Error("This invite was sent to a different email address.");
-    }
-    const existing = await getMembership(db, invite.organization_id, args.userId);
+    const existing = await getMembership(db, invite.organization_id, userId);
     if (!existing) {
         const { error } = await db.from("organization_members").insert({
             organization_id: invite.organization_id,
-            user_id: args.userId,
+            user_id: userId,
             role: invite.role,
             updated_at: new Date().toISOString(),
         });
@@ -613,10 +720,63 @@ export async function acceptOrganizationInvite(
         })
         .eq("id", invite.id);
     if (acceptError) throw acceptError;
-    await setActiveOrganization(db, args.userId, invite.organization_id);
-    const membership = await getMembership(db, invite.organization_id, args.userId);
+    await setActiveOrganization(db, userId, invite.organization_id);
+    await recordOrganizationActivity(db, {
+        organizationId: invite.organization_id,
+        actorUserId: userId,
+        action: "invite_accepted",
+        targetUserId: userId,
+        targetEmail: invite.email,
+        metadata: { role: invite.role },
+    });
+    const membership = await getMembership(db, invite.organization_id, userId);
     if (!membership) throw new Error("Failed to join organization.");
     return membership;
+}
+
+export async function acceptOrganizationInvite(
+    db: Db,
+    args: { token: string; userId: string; userEmail: string },
+) {
+    const invite = await getInviteByToken(db, args.token);
+    if (!invite) throw new Error("Invite not found.");
+    if (invite.status !== "pending") {
+        throw new Error("This invite is no longer valid.");
+    }
+    const email = normalizeEmail(args.userEmail);
+    if (email !== invite.email) {
+        throw new Error("This invite was sent to a different email address.");
+    }
+    return applyAcceptedInvite(db, invite, args.userId);
+}
+
+export async function acceptOrganizationInviteById(
+    db: Db,
+    args: { inviteId: string; userId: string; userEmail: string },
+) {
+    const { data, error } = await db
+        .from("organization_invites")
+        .select("*")
+        .eq("id", args.inviteId)
+        .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Invite not found.");
+    const invite = data as OrganizationInviteRow;
+    if (inviteIsExpired(invite)) {
+        await db
+            .from("organization_invites")
+            .update({ status: "expired" })
+            .eq("id", invite.id);
+        throw new Error("This invite is no longer valid.");
+    }
+    if (invite.status !== "pending") {
+        throw new Error("This invite is no longer valid.");
+    }
+    const email = normalizeEmail(args.userEmail);
+    if (email !== invite.email) {
+        throw new Error("This invite was sent to a different email address.");
+    }
+    return applyAcceptedInvite(db, invite, args.userId);
 }
 
 export {

@@ -3,6 +3,7 @@ import { requireAuth, requireMfaIfEnrolled } from "../middleware/auth";
 import { createServerSupabase } from "../lib/supabase";
 import {
     acceptOrganizationInvite,
+    acceptOrganizationInviteById,
     canDeleteOrganization,
     canManageOrgKeys,
     canManageOrgMembers,
@@ -18,6 +19,8 @@ import {
     listOrganizationMembers,
     listPendingInvitesForEmail,
     listUserOrganizations,
+    recordOrganizationSettingsActivity,
+    regenerateOrganizationInviteLink,
     removeOrganizationMember,
     revokeOrganizationInvite,
     setActiveOrganization,
@@ -41,6 +44,18 @@ import {
     summarizeOrganizationUsage,
     withBudgetFields,
 } from "../lib/llmUsage";
+import { checkProjectAccess, listAccessibleProjectIds } from "../lib/access";
+import {
+    listOrganizationActivity,
+    recordOrganizationActivity,
+} from "../lib/organizationActivity";
+import {
+    getOrganizationMemberDetail,
+    getOrganizationOverview,
+    grantOrganizationMemberProjectAccess,
+    listOrganizationMembersWithProjectCounts,
+    revokeOrganizationMemberProjectAccess,
+} from "../lib/organizationDirectory";
 
 export const organizationsRouter = Router();
 
@@ -50,6 +65,11 @@ function errorMessage(error: unknown): string {
 }
 
 function errorStatus(error: unknown): number {
+    const explicit =
+        error && typeof error === "object"
+            ? (error as { status?: unknown; code?: unknown }).status
+            : undefined;
+    if (typeof explicit === "number") return explicit;
     const code =
         error && typeof error === "object"
             ? (error as { code?: unknown }).code
@@ -184,6 +204,27 @@ organizationsRouter.get("/invites/pending", requireAuth, async (_req, res) => {
     }
 });
 
+organizationsRouter.post(
+    "/invites/pending/:inviteId/accept",
+    requireAuth,
+    async (req, res) => {
+        const db = createServerSupabase();
+        try {
+            const membership = await acceptOrganizationInviteById(db, {
+                inviteId: req.params.inviteId,
+                userId: res.locals.userId as string,
+                userEmail: res.locals.userEmail as string,
+            });
+            res.json({
+                ...membership.organization,
+                role: membership.role,
+            });
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
 organizationsRouter.get("/invites/:token", requireAuth, async (req, res) => {
     const db = createServerSupabase();
     try {
@@ -285,6 +326,11 @@ organizationsRouter.patch("/:organizationId", requireAuth, async (req, res) => {
             patch.budget_enforcement = req.body.budgetEnforcement;
         }
         const updated = await updateOrganization(db, organization.id, patch);
+        await recordOrganizationSettingsActivity(db, {
+            organizationId: organization.id,
+            actorUserId: res.locals.userId as string,
+            fields: Object.keys(patch),
+        });
         res.json({ ...updated, role });
     } catch (err) {
         res.status(errorStatus(err)).json({ detail: errorMessage(err) });
@@ -318,8 +364,160 @@ organizationsRouter.get(
                 req.params.organizationId,
                 res.locals.userId as string,
             );
-            const members = await listOrganizationMembers(db, organization.id);
+            const members = await listOrganizationMembersWithProjectCounts(db, {
+                organizationId: organization.id,
+                viewerUserId: res.locals.userId as string,
+                viewerEmail: res.locals.userEmail as string,
+                orgAdminsCanAccessAll:
+                    organization.admins_can_access_all_projects === true,
+            });
             res.json(members);
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.get(
+    "/:organizationId/overview",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, role, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            const overview = await getOrganizationOverview(db, {
+                organization,
+                viewerUserId: res.locals.userId as string,
+                viewerEmail: res.locals.userEmail as string,
+                viewerRole: role,
+            });
+            res.json(overview);
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.get(
+    "/:organizationId/activity",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            const accessible = await listAccessibleProjectIds(
+                res.locals.userId as string,
+                res.locals.userEmail as string,
+                db,
+            );
+            const events = await listOrganizationActivity(db, {
+                organizationId: organization.id,
+                visibleProjectIds: new Set(accessible),
+                limit: Number(req.query.limit) || 50,
+            });
+            res.json(events);
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.get(
+    "/:organizationId/members/:memberUserId",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, role, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            const detail = await getOrganizationMemberDetail(db, {
+                organization,
+                viewerUserId: res.locals.userId as string,
+                viewerEmail: res.locals.userEmail as string,
+                viewerRole: role,
+                memberUserId: req.params.memberUserId,
+            });
+            res.json(detail);
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.post(
+    "/:organizationId/members/:memberUserId/projects",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, role, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            const projectId =
+                typeof req.body?.projectId === "string"
+                    ? req.body.projectId
+                    : typeof req.body?.project_id === "string"
+                      ? req.body.project_id
+                      : "";
+            if (!projectId) {
+                return void res
+                    .status(400)
+                    .json({ detail: "projectId is required" });
+            }
+            const access = await checkProjectAccess(
+                projectId,
+                res.locals.userId as string,
+                res.locals.userEmail as string,
+                db,
+            );
+            if (!access.ok) {
+                return void res.status(404).json({ detail: "Project not found." });
+            }
+            const member = await grantOrganizationMemberProjectAccess(db, {
+                organizationId: organization.id,
+                actorUserId: res.locals.userId as string,
+                actorOrgRole: role,
+                memberUserId: req.params.memberUserId,
+                projectId,
+            });
+            res.status(201).json(member);
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.delete(
+    "/:organizationId/members/:memberUserId/projects/:projectId",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, role, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            const access = await checkProjectAccess(
+                req.params.projectId,
+                res.locals.userId as string,
+                res.locals.userEmail as string,
+                db,
+            );
+            if (!access.ok) {
+                return void res.status(404).json({ detail: "Project not found." });
+            }
+            await revokeOrganizationMemberProjectAccess(db, {
+                organizationId: organization.id,
+                actorUserId: res.locals.userId as string,
+                actorOrgRole: role,
+                memberUserId: req.params.memberUserId,
+                projectId: req.params.projectId,
+            });
+            res.status(204).send();
         } catch (err) {
             res.status(errorStatus(err)).json({ detail: errorMessage(err) });
         }
@@ -461,12 +659,41 @@ organizationsRouter.delete(
                     detail: "Only owners and admins can revoke invites.",
                 });
             }
-            await revokeOrganizationInvite(
-                db,
-                organization.id,
-                req.params.inviteId,
-            );
+            await revokeOrganizationInvite(db, {
+                organizationId: organization.id,
+                inviteId: req.params.inviteId,
+                actorUserId: res.locals.userId as string,
+            });
             res.status(204).send();
+        } catch (err) {
+            res.status(errorStatus(err)).json({ detail: errorMessage(err) });
+        }
+    },
+);
+
+organizationsRouter.post(
+    "/:organizationId/invites/:inviteId/link",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { db, role, organization } = await requireMembership(
+                req.params.organizationId,
+                res.locals.userId as string,
+            );
+            if (!canManageOrgMembers(role)) {
+                return void res.status(403).json({
+                    detail: "Only owners and admins can generate invite links.",
+                });
+            }
+            const { invite, token } = await regenerateOrganizationInviteLink(db, {
+                organizationId: organization.id,
+                inviteId: req.params.inviteId,
+                actorUserId: res.locals.userId as string,
+            });
+            res.json({
+                ...invite,
+                acceptUrl: inviteUrl(token),
+            });
         } catch (err) {
             res.status(errorStatus(err)).json({ detail: errorMessage(err) });
         }
@@ -520,6 +747,12 @@ organizationsRouter.put(
             const apiKey =
                 typeof req.body?.api_key === "string" ? req.body.api_key : null;
             await saveOrganizationApiKey(organization.id, provider, apiKey, db);
+            await recordOrganizationActivity(db, {
+                organizationId: organization.id,
+                actorUserId: res.locals.userId as string,
+                action: apiKey ? "api_key_saved" : "api_key_removed",
+                metadata: { provider },
+            });
             const status = await getOrganizationApiKeyStatus(
                 organization.id,
                 db,

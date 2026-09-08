@@ -17,11 +17,13 @@ import { checkProjectAccess } from "../lib/access";
 import { getMembership, listOrganizationMembers } from "../lib/organizations";
 import {
   addProjectMember,
+  canManageProjectRoster,
   listProjectAccessEvents,
   listProjectMembers,
   removeProjectMember,
   replaceProjectMembersByEmails,
 } from "../lib/projectMembers";
+import type { OrgRole } from "../lib/organizationRoles";
 import { singleFileUpload } from "../lib/upload";
 import { deleteUserProjects } from "../lib/userDataCleanup";
 import {
@@ -34,6 +36,16 @@ import {
   findMissingUserEmails,
   loadProfileUsersByEmail,
 } from "../lib/userLookup";
+
+async function actorOrgRoleForProject(
+  db: ReturnType<typeof createServerSupabase>,
+  organizationId: string | null,
+  userId: string,
+): Promise<OrgRole | null> {
+  if (!organizationId) return null;
+  const membership = await getMembership(db, organizationId, userId);
+  return membership?.role ?? null;
+}
 
 function memberErrorStatus(error: unknown) {
   const status =
@@ -380,6 +392,16 @@ projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
   let organizationMembers: Awaited<
     ReturnType<typeof listOrganizationMembers>
   > = [];
+  const actorOrgRole = await actorOrgRoleForProject(
+    db,
+    project.organization_id,
+    userId,
+  );
+  const canManageMembers = canManageProjectRoster({
+    actorUserId: userId,
+    projectOwnerId: project.user_id,
+    actorOrgRole,
+  });
   if (project.organization_id) {
     const { data: org } = await db
       .from("organizations")
@@ -388,7 +410,7 @@ projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
       .maybeSingle();
     organizationName = (org?.name as string | null) ?? null;
     orgAdminsCanAccessAll = org?.admins_can_access_all_projects === true;
-    if (access.isOwner) {
+    if (canManageMembers) {
       organizationMembers = await listOrganizationMembers(
         db,
         project.organization_id,
@@ -402,6 +424,7 @@ projectsRouter.get("/:projectId/access", requireAuth, async (req, res) => {
       name: (named?.name as string | null) ?? "Project",
       organization_id: project.organization_id,
       is_owner: access.isOwner,
+      can_manage_members: canManageMembers,
     },
     owner: {
       user_id: project.user_id,
@@ -431,9 +454,20 @@ projectsRouter.post("/:projectId/members", requireAuth, async (req, res) => {
   const access = await checkProjectAccess(projectId, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Project not found" });
-  if (!access.isOwner) {
+  const actorOrgRole = await actorOrgRoleForProject(
+    db,
+    access.project.organization_id,
+    userId,
+  );
+  if (
+    !canManageProjectRoster({
+      actorUserId: userId,
+      projectOwnerId: access.project.user_id,
+      actorOrgRole,
+    })
+  ) {
     return void res.status(403).json({
-      detail: "Only the project owner can add people.",
+      detail: "Only the project owner or an organization admin can add people.",
     });
   }
   try {
@@ -463,9 +497,20 @@ projectsRouter.delete(
     const access = await checkProjectAccess(projectId, userId, userEmail, db);
     if (!access.ok)
       return void res.status(404).json({ detail: "Project not found" });
-    if (!access.isOwner && userId !== memberUserId) {
+    const actorOrgRole = await actorOrgRoleForProject(
+      db,
+      access.project.organization_id,
+      userId,
+    );
+    const canManage = canManageProjectRoster({
+      actorUserId: userId,
+      projectOwnerId: access.project.user_id,
+      actorOrgRole,
+    });
+    if (!canManage && userId !== memberUserId) {
       return void res.status(403).json({
-        detail: "Only the project owner can remove people.",
+        detail:
+          "Only the project owner or an organization admin can remove people.",
       });
     }
     try {
