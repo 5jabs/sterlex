@@ -626,7 +626,7 @@ function TRChatInput({
         <div
             ref={rootRef}
             className={cn(
-                "absolute bottom-0 left-0 right-0 px-4 pb-3",
+                "absolute right-0 bottom-0 left-0 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-3",
                 "bg-transparent",
             )}
         >
@@ -1764,7 +1764,7 @@ export function TRChatPanel({
             className={cn(
                 "relative flex h-full w-full shrink-0 flex-col md:w-[var(--tr-chat-panel-width)]",
                 "bg-transparent",
-                "max-md:fixed max-md:inset-0 max-md:z-40 max-md:border-0 max-md:bg-gray-50",
+                "max-md:fixed max-md:inset-0 max-md:z-40 max-md:border-0 max-md:bg-gray-50 max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)]",
                 "md:border-r md:border-gray-200",
             )}
         >

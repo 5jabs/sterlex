@@ -11,8 +11,13 @@ import type {
     Message,
 } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
+import {
+    chatComposerReservePx,
+    DEFAULT_CHAT_COMPOSER_RESERVE_PX,
+} from "@/app/lib/chatLayout";
+import { useEffect, useRef, useState } from "react";
 
-export const PROJECT_CHAT_BOTTOM_PADDING = 116;
+export const PROJECT_CHAT_BOTTOM_PADDING = DEFAULT_CHAT_COMPOSER_RESERVE_PX;
 
 export function ProjectChatPane({
     chatLoaded,
@@ -68,8 +73,22 @@ export function ProjectChatPane({
     latestUserMessageRef: RefObject<HTMLDivElement | null>;
     messagesContainerRef: RefObject<HTMLDivElement | null>;
 }) {
+    const inputWrapRef = useRef<HTMLDivElement>(null);
+    const [inputHeight, setInputHeight] = useState(0);
+
+    useEffect(() => {
+        const el = inputWrapRef.current;
+        if (!el) return;
+        const update = () => setInputHeight(el.offsetHeight);
+        const observer = new ResizeObserver(update);
+        observer.observe(el);
+        update();
+        return () => observer.disconnect();
+    }, []);
+
     const lastUserIdx = messages.map((m) => m.role).lastIndexOf("user");
     const lastAssistantIdx = messages.map((m) => m.role).lastIndexOf("assistant");
+    const messagesBottomPadding = chatComposerReservePx(inputHeight);
 
     return (
         <div className={cn("relative flex min-h-0 flex-1 flex-col", className)}>
@@ -110,7 +129,7 @@ export function ProjectChatPane({
                     ref={messagesContainerRef}
                     className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 pt-6 md:space-y-8 md:pt-8"
                     style={{
-                        paddingBottom: PROJECT_CHAT_BOTTOM_PADDING,
+                        paddingBottom: messagesBottomPadding,
                         scrollbarGutter: "stable",
                     }}
                 >
@@ -156,9 +175,9 @@ export function ProjectChatPane({
                 </div>
             )}
 
-            <div className="absolute bottom-2 left-0 right-0 z-30 w-full md:bottom-3">
+            <div className="absolute right-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-0 z-30 w-full md:bottom-3">
                 <div className="pointer-events-none absolute -bottom-2 left-4 right-4 z-0 h-7 bg-white/50 backdrop-blur-[1px] md:-bottom-3" />
-                <div className="relative z-20 w-full px-4">
+                <div ref={inputWrapRef} className="relative z-20 w-full px-4">
                     <ChatInput
                         ref={chatInputRef}
                         onSubmit={onSubmit}
