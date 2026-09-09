@@ -17,7 +17,7 @@ import { GLASS_DROPDOWN } from "@/app/components/shared/HeaderFilterDropdown";
 
 export const TABLE_STICKY_CELL_BG = "bg-[#fafbfc]";
 export const TABLE_PRIMARY_CELL_WIDTH_CLASS =
-    "w-[248px] sm:w-[292px] md:w-[332px] shrink-0";
+    "w-[min(248px,calc(100vw-10.5rem))] sm:w-[292px] md:w-[332px] shrink-0";
 export const TABLE_CHECKBOX_CLASS =
     "h-4 w-4 shrink-0 rounded border-gray-200 cursor-pointer accent-black md:h-2.5 md:w-2.5";
 export const TABLE_COLLAPSE_COL = "max-md:hidden";
@@ -148,7 +148,7 @@ export function TableRow({
         <>
             <div
                 className={cn(
-                    "group flex h-10 items-center border-b border-gray-50 pr-3 transition-colors md:pr-10",
+                    "group flex h-12 items-center border-b border-gray-50 pr-3 transition-colors md:h-10 md:pr-10",
                     interactive && "cursor-pointer hover:bg-gray-100",
                     className,
                 )}
