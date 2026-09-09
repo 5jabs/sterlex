@@ -453,9 +453,12 @@ export function ProjectPageHeader({
                                 <MessageSquare className="h-4 w-4" />
                             ),
                             label: (
-                                <span className="hidden sm:inline">
-                                    New Chat
-                                </span>
+                                <>
+                                    <span className="sm:hidden">Chat</span>
+                                    <span className="hidden sm:inline">
+                                        New Chat
+                                    </span>
+                                </>
                             ),
                         },
                         {
@@ -467,9 +470,12 @@ export function ProjectPageHeader({
                                 <Table2 className="h-4 w-4" />
                             ),
                             label: (
-                                <span className="hidden sm:inline">
-                                    New Review
-                                </span>
+                                <>
+                                    <span className="sm:hidden">Review</span>
+                                    <span className="hidden sm:inline">
+                                        New Review
+                                    </span>
+                                </>
                             ),
                             tooltip:
                                 docsCount === 0

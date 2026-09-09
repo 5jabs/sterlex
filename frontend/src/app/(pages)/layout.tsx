@@ -111,31 +111,34 @@ export default function SterlexLayout({
                     }}
                 >
                     <div className="flex h-dvh max-w-[100vw] flex-col overflow-hidden bg-gray-50/80">
-                        <div className="flex min-w-0 flex-1 overflow-hidden">
+                        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
                             <AppSidebar
                                 isOpen={isSidebarOpen}
                                 onToggle={handleSidebarToggle}
                             />
-                            <div className="relative flex h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden">
-                                {/* Mobile header */}
-                                <div className="relative z-20 flex shrink-0 items-center gap-3 overflow-visible px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
-                                    <button
-                                        onClick={handleSidebarToggle}
-                                        className="flex h-11 w-11 items-center justify-center rounded-full bg-white/70 text-gray-700 shadow-[0_8px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/70 backdrop-blur-md transition-all hover:bg-white/90 active:scale-95"
-                                        title="Open sidebar"
-                                        aria-label="Open sidebar"
-                                    >
-                                        <PanelLeft className="h-4 w-4" />
-                                    </button>
-                                    <div className="min-w-0 flex-1">
-                                        <WorkspaceIdentity compact />
+                            <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+                                {/* Mobile chrome: identity on its own row so
+                                    page actions stay fully visible below. */}
+                                <div className="relative z-20 flex shrink-0 flex-col gap-2 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handleSidebarToggle}
+                                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/70 text-gray-700 shadow-[0_8px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/70 backdrop-blur-md transition-all hover:bg-white/90 active:scale-95"
+                                            title="Open sidebar"
+                                            aria-label="Open sidebar"
+                                        >
+                                            <PanelLeft className="h-4 w-4" />
+                                        </button>
+                                        <div className="min-w-0 flex-1">
+                                            <WorkspaceIdentity compact />
+                                        </div>
                                     </div>
                                     <div
                                         ref={handleMobileActionsContainerRef}
-                                        className="ml-auto flex shrink-0 items-center justify-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                                        className="flex min-w-0 flex-wrap items-center justify-end gap-2 empty:hidden"
                                     />
                                 </div>
-                                <main className="flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain md:overflow-hidden">
+                                <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
                                     {children}
                                 </main>
                             </div>

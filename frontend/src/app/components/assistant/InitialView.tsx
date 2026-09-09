@@ -14,9 +14,9 @@ export function InitialView({ onSubmit }: InitialViewProps) {
     const [projectModalOpen, setProjectModalOpen] = useState(false);
 
     return (
-        <div className="flex h-full w-full min-w-0 flex-col px-4 md:px-6">
-            <div className="flex justify-center pt-[6vh] md:pt-[14vh]">
-                <SiteLogo size="xl" className="text-4xl md:text-6xl" />
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6">
+            <div className="flex justify-center pt-[4vh] md:pt-[14vh]">
+                <SiteLogo size="xl" className="text-3xl md:text-6xl" />
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center">

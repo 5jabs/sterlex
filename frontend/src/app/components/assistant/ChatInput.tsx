@@ -238,9 +238,9 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                     {/* Controls */}
                     <div
                         ref={controlsRef}
-                        className="flex items-center justify-between md:p-2.5 p-2"
+                        className="flex flex-wrap items-center justify-between gap-y-1 p-2 md:p-2.5"
                     >
-                        <div className="flex items-center gap-1">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                             {!hideAddDocButton && (
                                 <AddDocButton
                                     onBrowseAll={() => setDocSelectorOpen(true)}
@@ -297,7 +297,7 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                             )}
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex shrink-0 items-center gap-1">
                             <ModelToggle
                                 value={model}
                                 onChange={setModel}

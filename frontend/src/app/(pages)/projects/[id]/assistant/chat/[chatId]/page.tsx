@@ -377,13 +377,15 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         const containerEl = messagesContainerRef.current;
         if (!userEl || !containerEl) return;
         const messageGap = window.innerWidth < 768 ? 24 : 32;
+        const composerReserve =
+            window.innerWidth < 768 ? 168 : DEFAULT_ASSISTANT_BOTTOM_PADDING;
         setMinHeight(
             `${Math.max(
                 0,
                 containerEl.clientHeight -
                     messageGap * 3 -
                     userEl.offsetHeight -
-                    DEFAULT_ASSISTANT_BOTTOM_PADDING,
+                    composerReserve,
             )}px`,
         );
     }, [messages.length]);

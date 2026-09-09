@@ -165,7 +165,7 @@ export function TRSidePanel({
         <div
             className={cn(
                 "fixed z-100 flex flex-row",
-                "inset-3 md:inset-auto md:right-3 md:top-3 md:bottom-3 overflow-hidden rounded-2xl border border-white/70 bg-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl",
+                "inset-3 max-md:top-[max(0.5rem,env(safe-area-inset-top))] max-md:bottom-[max(0.5rem,env(safe-area-inset-bottom))] md:inset-auto md:right-3 md:top-3 md:bottom-3 overflow-hidden rounded-2xl border border-white/70 bg-white/20 shadow-[0_8px_24px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-10px_24px_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.5)] backdrop-blur-2xl",
             )}
         >
             {/* Document panel — left, 600px on desktop; full overlay pane on mobile */}

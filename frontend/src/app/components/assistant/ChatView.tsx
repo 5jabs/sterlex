@@ -21,6 +21,7 @@ import type {
 } from "../shared/types";
 import { useSidebar } from "@/app/contexts/SidebarContext";
 import { invalidateDocxBytes } from "@/app/hooks/useFetchDocxBytes";
+import { chatComposerReservePx } from "@/app/lib/chatLayout";
 
 interface Props {
     chatId?: string | null;
@@ -41,7 +42,6 @@ interface Props {
 
 const ASSISTANT_PANEL_TRANSITION_MS = 500;
 const MOBILE_BREAKPOINT_PX = 768;
-const DEFAULT_ASSISTANT_BOTTOM_PADDING = 116;
 const SCROLL_BUTTON_INPUT_GAP = 16;
 const CHAT_INPUT_BOTTOM_OFFSET = 12;
 
@@ -498,15 +498,16 @@ export function ChatView({
 
     useEffect(() => {
         if (latestUserMessageRef.current) {
-            const headerHeight = window.innerWidth < 768 ? 56 : 0;
+            const container = messagesContainerRef.current;
             const messageGap = window.innerWidth < 768 ? 24 : 32;
-            const paddingBottom = DEFAULT_ASSISTANT_BOTTOM_PADDING;
+            const paddingBottom = chatComposerReservePx(inputHeight);
             const userMessageHeight = latestUserMessageRef.current.offsetHeight;
+            const available = container?.clientHeight ?? window.innerHeight;
             setMinHeight(
-                `calc(100dvh - ${headerHeight + messageGap * 3 + userMessageHeight + paddingBottom}px)`,
+                `${Math.max(0, available - messageGap * 3 - userMessageHeight - paddingBottom)}px`,
             );
         }
-    }, [messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [inputHeight, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const updateScrollButton = useCallback(() => {
         const c = messagesContainerRef.current;
@@ -626,12 +627,12 @@ export function ChatView({
             ? rawActiveInput
             : null;
 
-    const messagesBottomPadding = DEFAULT_ASSISTANT_BOTTOM_PADDING;
+    const messagesBottomPadding = chatComposerReservePx(inputHeight);
 
     return (
-        <div className="h-full w-full flex relative">
+        <div className="relative flex h-full min-h-0 w-full">
             {/* Chat column */}
-            <div className="flex min-w-0 flex-col h-full flex-1 relative">
+            <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
                 {/* Scrollable messages */}
                 <div
                     ref={messagesContainerRef}
@@ -639,7 +640,7 @@ export function ChatView({
                     style={{ scrollbarGutter: "stable both-edges" }}
                 >
                     <div
-                        className="w-full max-w-4xl mx-auto px-4 pt-4 md:px-8 md:pt-8 min-h-full flex flex-col relative"
+                        className="relative mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 pt-4 md:px-8 md:pt-8"
                         style={{ paddingBottom: messagesBottomPadding }}
                     >
                         {!messagesVisible && (
@@ -840,7 +841,7 @@ export function ChatView({
 
             {panelMounted && (
                 <div
-                    className={`fixed inset-0 z-40 flex justify-center p-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:relative md:inset-auto md:z-auto md:block md:h-full md:min-w-0 md:flex-shrink-0 md:p-0 ${panelVisible ? "translate-x-0" : "translate-x-full"}`}
+                    className={`fixed inset-0 z-40 flex justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:relative md:inset-auto md:z-auto md:block md:h-full md:min-w-0 md:flex-shrink-0 md:p-0 ${panelVisible ? "translate-x-0" : "translate-x-full"}`}
                 >
                     <AssistantSidePanel
                         tabs={tabs}

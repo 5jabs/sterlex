@@ -2,7 +2,7 @@ import React from "react";
 
 interface ToolbarItem<T extends string> {
     id: T;
-    label: string;
+    label: React.ReactNode;
 }
 
 interface Props<T extends string> {

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { accountTabButtonClassName } from "./accountStyles";
+import { HorizontalTabScroller } from "@/app/components/shared/HorizontalTabScroller";
 
 interface TabDef {
     id: string;
@@ -72,9 +73,8 @@ export default function AccountLayout({
                         aria-label="Settings"
                         className="z-10 -ml-3 min-w-0 self-start md:sticky md:top-4"
                     >
-                        <div className="-m-1 min-w-0 p-1">
-                            <div className="-m-1 min-w-0 overflow-x-auto overflow-y-hidden p-1">
-                                <ul className="mb-0 flex gap-1 md:flex-col">
+                        <HorizontalTabScroller>
+                                <ul className="mb-0 flex flex-nowrap gap-1 md:flex-col">
                                     {TABS.map((tab) => {
                                         const active =
                                             pathname === tab.href ||
@@ -102,8 +102,7 @@ export default function AccountLayout({
                                         );
                                     })}
                                 </ul>
-                            </div>
-                        </div>
+                        </HorizontalTabScroller>
                     </nav>
 
                     <div className="min-w-0 outline-none">{children}</div>

@@ -539,8 +539,28 @@ export function ProjectSectionToolbar({
         <TableToolbar
             items={[
                 { id: "documents", label: "Documents" },
-                { id: "assistant", label: "Assistant Chats" },
-                { id: "reviews", label: "Tabular Reviews" },
+                {
+                    id: "assistant",
+                    label: (
+                        <>
+                            <span className="md:hidden">Chats</span>
+                            <span className="hidden md:inline">
+                                Assistant Chats
+                            </span>
+                        </>
+                    ),
+                },
+                {
+                    id: "reviews",
+                    label: (
+                        <>
+                            <span className="md:hidden">Reviews</span>
+                            <span className="hidden md:inline">
+                                Tabular Reviews
+                            </span>
+                        </>
+                    ),
+                },
             ]}
             active={activeSection}
             onChange={(next) => {
