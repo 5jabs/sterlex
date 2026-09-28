@@ -20,6 +20,7 @@ export type LlmUsageEventInput = {
     inputTokens?: number;
     outputTokens?: number;
     estimatedCostUsd?: number;
+    billedTokens?: number;
     keySource?: ResolvedApiKeySource;
 };
 
@@ -143,6 +144,7 @@ export async function recordLlmUsageEvent(
         input_tokens: Math.max(0, input.inputTokens ?? 0),
         output_tokens: Math.max(0, input.outputTokens ?? 0),
         estimated_cost_usd: estimatedCostUsd,
+        billed_tokens: Math.max(0, input.billedTokens ?? 0),
         key_source: input.keySource ?? null,
     });
     if (error) {

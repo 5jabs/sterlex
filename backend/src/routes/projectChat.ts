@@ -24,7 +24,8 @@ import {
 } from "../lib/userSettings";
 import { checkProjectAccess } from "../lib/access";
 import { safeErrorLog, safeErrorMessage } from "../lib/safeError";
-import { meteringFromSettings, tryOrgBudgetGuard } from "../lib/llmUsage";
+import { meteringFromSettings } from "../lib/llmUsage";
+import { tryBillingGuard } from "../lib/billing/meter";
 
 const PROJECT_SYSTEM_PROMPT_EXTRA = `PROJECT CONTEXT:
 You are operating within a project folder that contains a collection of legal documents the user has organised for a single matter. The user's questions will usually refer to one or more documents in this project — your job is to find the relevant files to work on. Use list_documents to see what is available and fetch_documents / read_document to pull in any documents you need before answering.
@@ -76,7 +77,7 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
     const settings = await getUserModelSettings(userId, db, { projectId });
     const apiKeys = settings.api_keys;
     const legalResearchUs = settings.legal_research_us;
-    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+    if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
         return;
     }
     const metering = meteringFromSettings({

@@ -11,7 +11,7 @@ import {
 
 type Db = ReturnType<typeof createServerSupabase>;
 
-export type ProjectMemberRole = "member";
+export type ProjectMemberRole = "admin" | "editor" | "viewer" | "member";
 
 export type ProjectMemberRecord = {
     id: string;
@@ -101,7 +101,7 @@ export async function listProjectMembers(
             id: row.id as string,
             project_id: row.project_id as string,
             user_id: row.user_id as string,
-            role: "member" as const,
+            role: (row.role as ProjectMemberRole) || "editor",
             added_by: (row.added_by as string | null) ?? null,
             created_at: row.created_at as string,
             email: (profile?.email as string | null) ?? null,
@@ -215,6 +215,7 @@ export async function addProjectMember(
         actorUserId: string;
         targetUserId?: string | null;
         email?: string | null;
+        role?: ProjectMemberRole;
     },
 ): Promise<ProjectMemberRecord> {
     if (!args.targetUserId && !normalizeEmail(args.email)) {
@@ -283,7 +284,7 @@ export async function addProjectMember(
         .insert({
             project_id: args.projectId,
             user_id: target.id,
-            role: "member",
+            role: args.role && args.role !== "member" ? args.role : "editor",
             added_by: args.actorUserId,
         })
         .select("id, project_id, user_id, role, added_by, created_at")

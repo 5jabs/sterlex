@@ -56,6 +56,8 @@ import {
     listOrganizationMembersWithProjectCounts,
     revokeOrganizationMemberProjectAccess,
 } from "../lib/organizationDirectory";
+import { countOrgOccupiedSeats, ensureOrgWallet } from "../lib/billing/wallet";
+import { sendOrganizationInviteEmail } from "../lib/email";
 
 export const organizationsRouter = Router();
 
@@ -629,15 +631,35 @@ organizationsRouter.post(
             const inviteRole = isOrgInviteRole(req.body?.role)
                 ? req.body.role
                 : "member";
+            const occupied = await countOrgOccupiedSeats(db, organization.id);
+            const wallet = await ensureOrgWallet(db, organization.id);
+            if (wallet.subscription_status !== "active" && wallet.subscription_status !== "trialing") {
+                return void res.status(402).json({
+                    code: "subscription_required",
+                    detail: "Start an Enterprise subscription before inviting teammates.",
+                });
+            }
+            if (occupied >= wallet.seats) {
+                return void res.status(402).json({
+                    code: "seat_limit",
+                    detail: "All seats are used. Add seats in billing, then invite again.",
+                });
+            }
             const { invite, token } = await createOrganizationInvite(db, {
                 organizationId: organization.id,
                 email,
                 role: inviteRole,
                 invitedBy: res.locals.userId as string,
             });
+            const url = inviteUrl(token);
+            await sendOrganizationInviteEmail({
+                to: email,
+                organizationName: organization.name,
+                acceptUrl: url,
+            });
             res.status(201).json({
                 ...invite,
-                acceptUrl: inviteUrl(token),
+                acceptUrl: url,
             });
         } catch (err) {
             res.status(errorStatus(err)).json({ detail: errorMessage(err) });
