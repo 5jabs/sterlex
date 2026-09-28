@@ -1111,3 +1111,86 @@ revoke all on public.organization_invites from anon, authenticated;
 revoke all on public.organization_api_keys from anon, authenticated;
 revoke all on public.llm_usage_events from anon, authenticated;
 revoke all on public.organization_activity_events from anon, authenticated;
+
+-- Token billing (also in supabase/migrations/20260928140000_billing_wallets.sql)
+create table if not exists public.wallets (
+  id uuid primary key default gen_random_uuid(),
+  owner_type text not null check (owner_type in ('user', 'organization')),
+  user_id uuid references auth.users(id) on delete cascade,
+  organization_id uuid references public.organizations(id) on delete cascade,
+  plan text not null default 'free'
+    check (plan in ('free', 'personal', 'enterprise')),
+  seats integer not null default 1,
+  included_tokens_grant bigint not null default 50000,
+  included_tokens_remaining bigint not null default 50000,
+  included_reset_at timestamptz not null default (now() + interval '30 days'),
+  prepaid_tokens bigint not null default 0,
+  auto_recharge_enabled boolean not null default false,
+  auto_recharge_packs integer not null default 1,
+  stripe_customer_id text,
+  stripe_subscription_id text,
+  stripe_price_id text,
+  default_payment_method_id text,
+  subscription_status text,
+  past_due boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint wallets_owner_xor check (
+    (owner_type = 'user' and user_id is not null and organization_id is null)
+    or
+    (owner_type = 'organization' and organization_id is not null and user_id is null)
+  )
+);
+create unique index if not exists wallets_user_unique on public.wallets (user_id) where owner_type = 'user';
+create unique index if not exists wallets_organization_unique on public.wallets (organization_id) where owner_type = 'organization';
+alter table public.wallets enable row level security;
+
+create table if not exists public.token_ledger (
+  id uuid primary key default gen_random_uuid(),
+  wallet_id uuid not null references public.wallets(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  reason text not null,
+  billed_tokens bigint not null,
+  included_delta bigint not null default 0,
+  prepaid_delta bigint not null default 0,
+  llm_input_tokens integer not null default 0,
+  llm_output_tokens integer not null default 0,
+  model text,
+  stripe_event_id text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.token_ledger enable row level security;
+
+create table if not exists public.billing_stripe_events (
+  id text primary key,
+  type text not null,
+  processed_at timestamptz not null default now()
+);
+alter table public.billing_stripe_events enable row level security;
+
+create table if not exists public.billing_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  wallet_id uuid not null references public.wallets(id) on delete cascade,
+  stripe_customer_id text not null,
+  stripe_subscription_id text not null unique,
+  stripe_price_id text,
+  plan text not null,
+  status text not null,
+  seats integer not null default 1,
+  current_period_start timestamptz,
+  current_period_end timestamptz,
+  cancel_at_period_end boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.billing_subscriptions enable row level security;
+
+alter table public.user_profiles add column if not exists onboarding_completed_at timestamptz;
+alter table public.user_profiles add column if not exists welcome_email_sent_at timestamptz;
+alter table public.llm_usage_events add column if not exists billed_tokens integer not null default 0;
+
+revoke all on public.wallets from anon, authenticated;
+revoke all on public.token_ledger from anon, authenticated;
+revoke all on public.billing_stripe_events from anon, authenticated;
+revoke all on public.billing_subscriptions from anon, authenticated;

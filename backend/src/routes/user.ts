@@ -41,6 +41,12 @@ import {
     userExportFilename,
 } from "../lib/userDataExport";
 import { findProfileUserByEmail } from "../lib/userLookup";
+import { sendWelcomeEmail } from "../lib/email";
+import {
+    ensureUserWallet,
+    serializeWallet,
+} from "../lib/billing/wallet";
+import { isStripeConfigured } from "../lib/billing/stripe";
 
 export const userRouter = Router();
 
@@ -307,6 +313,7 @@ function validateProfilePayload(body: unknown):
               title_model?: string;
               tabular_model?: string;
               legal_research_us?: boolean;
+              onboarding_completed_at?: string | null;
               updated_at: string;
           };
       }
@@ -322,6 +329,7 @@ function validateProfilePayload(body: unknown):
         "titleModel",
         "tabularModel",
         "legalResearchUs",
+        "onboardingCompleted",
     ]);
     const invalidField = Object.keys(raw).find(
         (key) => !allowedFields.has(key),
@@ -339,6 +347,7 @@ function validateProfilePayload(body: unknown):
         title_model?: string;
         tabular_model?: string;
         legal_research_us?: boolean;
+        onboarding_completed_at?: string | null;
         updated_at: string;
     } = { updated_at: new Date().toISOString() };
 
@@ -392,6 +401,18 @@ function validateProfilePayload(body: unknown):
             };
         }
         update.legal_research_us = raw.legalResearchUs;
+    }
+
+    if ("onboardingCompleted" in raw) {
+        if (typeof raw.onboardingCompleted !== "boolean") {
+            return {
+                ok: false,
+                detail: "onboardingCompleted must be a boolean",
+            };
+        }
+        update.onboarding_completed_at = raw.onboardingCompleted
+            ? new Date().toISOString()
+            : null;
     }
 
     return { ok: true, update };
@@ -497,6 +518,34 @@ async function loadProfile(
     return { data: serializeProfile(row, options.apiKeyStatus), error: null };
 }
 
+async function withBilling(
+    db: ReturnType<typeof createServerSupabase>,
+    userId: string,
+    profile: Record<string, unknown>,
+) {
+    const wallet = await ensureUserWallet(db, userId);
+    const { data: extras } = await db
+        .from("user_profiles")
+        .select("welcome_email_sent_at, onboarding_completed_at, email")
+        .eq("user_id", userId)
+        .maybeSingle();
+    if (extras && !extras.welcome_email_sent_at && extras.email) {
+        await sendWelcomeEmail(String(extras.email));
+        await db
+            .from("user_profiles")
+            .update({ welcome_email_sent_at: new Date().toISOString() })
+            .eq("user_id", userId);
+    }
+    return {
+        ...profile,
+        tier: wallet.plan,
+        creditsRemaining: wallet.included_tokens_remaining + wallet.prepaid_tokens,
+        creditsResetDate: wallet.included_reset_at,
+        onboardingCompleted: !!extras?.onboarding_completed_at,
+        wallet: serializeWallet(wallet, isStripeConfigured()),
+    };
+}
+
 // POST /user/profile
 userRouter.post("/profile", requireAuth, async (_req, res) => {
     const userId = res.locals.userId as string;
@@ -532,7 +581,7 @@ userRouter.get("/profile", requireAuth, async (_req, res) => {
         apiKeyStatus,
     });
     if (error) return void res.status(500).json({ detail: error.message });
-    res.json({ ...data, apiKeyStatus });
+    res.json(await withBilling(db, userId, { ...data, apiKeyStatus }));
 });
 
 // PATCH /user/profile
@@ -556,7 +605,7 @@ userRouter.patch("/profile", requireAuth, async (req, res) => {
     const apiKeyStatus = await getUserApiKeyStatus(userId, db);
     const { data, error } = await loadProfile(db, userId, { apiKeyStatus });
     if (error) return void res.status(500).json({ detail: error.message });
-    res.json({ ...data, apiKeyStatus });
+    res.json(await withBilling(db, userId, { ...data, apiKeyStatus }));
 });
 
 // PATCH /user/security/mfa-login

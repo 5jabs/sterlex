@@ -47,6 +47,9 @@ export default function ProjectAccessPage({
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [busyUserId, setBusyUserId] = useState<string | null>(null);
+    const [memberRole, setMemberRole] = useState<"editor" | "admin" | "viewer">(
+        "editor",
+    );
 
     const reload = useCallback(async () => {
         const next = await getProjectAccess(projectId);
@@ -89,6 +92,7 @@ export default function ProjectAccessPage({
         await addProjectMember(projectId, {
             email: userToAdd.email,
             user_id: userToAdd.user_id,
+            role: memberRole,
         });
         await reload();
     }
@@ -97,7 +101,10 @@ export default function ProjectAccessPage({
         setBusyUserId(userId);
         setError(null);
         try {
-            await addProjectMember(projectId, { user_id: userId });
+            await addProjectMember(projectId, {
+                user_id: userId,
+                role: memberRole,
+            });
             await reload();
         } catch (err) {
             setError((err as Error).message);
@@ -185,6 +192,25 @@ export default function ProjectAccessPage({
                             <p className="mb-2 text-sm font-medium text-gray-800">
                                 Add people
                             </p>
+                            <label className="mb-2 block text-xs text-gray-500">
+                                Role{" "}
+                                <select
+                                    className="ml-1 rounded border border-gray-200 bg-white px-2 py-1 text-sm text-gray-800"
+                                    value={memberRole}
+                                    onChange={(event) =>
+                                        setMemberRole(
+                                            event.target.value as
+                                                | "editor"
+                                                | "admin"
+                                                | "viewer",
+                                        )
+                                    }
+                                >
+                                    <option value="editor">Editor</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="viewer">Viewer</option>
+                                </select>
+                            </label>
                             <AddUserInput
                                 onAdd={addByEmail}
                                 validateEmail={(email) => {

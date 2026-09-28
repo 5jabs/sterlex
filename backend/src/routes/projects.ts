@@ -470,6 +470,11 @@ projectsRouter.post("/:projectId/members", requireAuth, async (req, res) => {
       detail: "Only the project owner or an organization admin can add people.",
     });
   }
+  if (!access.project.organization_id) {
+    return void res.status(403).json({
+      detail: "Project sharing is available on the Enterprise plan.",
+    });
+  }
   try {
     const member = await addProjectMember(db, {
       projectId,
@@ -479,6 +484,12 @@ projectsRouter.post("/:projectId/members", requireAuth, async (req, res) => {
       targetUserId:
         typeof req.body?.user_id === "string" ? req.body.user_id : null,
       email: typeof req.body?.email === "string" ? req.body.email : null,
+      role:
+        req.body?.role === "admin" ||
+        req.body?.role === "editor" ||
+        req.body?.role === "viewer"
+          ? req.body.role
+          : "editor",
     });
     res.status(201).json(member);
   } catch (err) {

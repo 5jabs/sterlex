@@ -28,8 +28,8 @@ import {
     OrganizationBudgetExceededError,
     meteringFromSettings,
     orgBudgetErrorPayload,
-    tryOrgBudgetGuard,
 } from "../lib/llmUsage";
+import { tryBillingGuard } from "../lib/billing/meter";
 
 export const chatRouter = Router();
 
@@ -429,7 +429,7 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
             { projectId: chat.project_id },
         );
         if (
-            !(await tryOrgBudgetGuard(db, settings.organizationId, res))
+            !(await tryBillingGuard(db, userId, settings.organizationId, res))
         ) {
             return;
         }
@@ -533,7 +533,7 @@ chatRouter.post("/", requireAuth, async (req, res) => {
     });
     const apiKeys = settings.api_keys;
     const legalResearchUs = settings.legal_research_us;
-    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+    if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
         return;
     }
     const metering = meteringFromSettings({

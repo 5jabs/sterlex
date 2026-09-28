@@ -89,11 +89,16 @@ export default function OrganizationSettingsLayout({
                   label: "API Keys",
                   match: "prefix" as const,
               },
-              {
-                  href: `/organizations/${organization.id}/usage`,
-                  label: "Usage",
-                  match: "prefix" as const,
-              },
+                  {
+                      href: `/organizations/${organization.id}/billing`,
+                      label: "Billing",
+                      match: "prefix" as const,
+                  },
+                  {
+                      href: `/organizations/${organization.id}/usage`,
+                      label: "Usage",
+                      match: "prefix" as const,
+                  },
               {
                   href: `/organizations/${organization.id}/settings`,
                   label: "Settings",

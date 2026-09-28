@@ -92,6 +92,7 @@ function Reveal({
 
 const NAV_LINKS = [
     { label: "Product", href: "#features" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Who it's for", href: "#audiences" },
     { label: "FAQ", href: "#faq" },
 ];
@@ -150,7 +151,7 @@ function SiteNav() {
                         href="/signup"
                         className="rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:scale-[1.04] hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
                     >
-                        Start free trial
+                        Start free
                     </Link>
                 </div>
 
@@ -191,7 +192,7 @@ function SiteNav() {
                                 href="/signup"
                                 className="rounded-full bg-gray-900 px-4 py-2 text-center text-sm font-medium text-white"
                             >
-                                Start free trial
+                                Start free
                             </Link>
                         </div>
                     </nav>
@@ -272,10 +273,12 @@ function Hero() {
                             href="/signup"
                             className="group inline-flex items-center justify-center gap-2 rounded-full bg-gray-900 px-7 py-3.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(38,37,30,0.28)] transition-all duration-200 hover:scale-[1.04] hover:bg-gray-800 hover:shadow-[0_12px_32px_rgba(38,37,30,0.34)] active:scale-[0.98]"
                         >
-                            Start your 7 day free trial
+                            Start free
                             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                         </Link>
-                        <p className="text-xs text-gray-400">Cancel anytime.</p>
+                        <p className="text-xs text-gray-400">
+                            Small token allowance. Upgrade when you need more.
+                        </p>
                     </div>
                 </div>
 
@@ -749,7 +752,7 @@ const COMPARISON_ROWS = [
     },
     {
         label: "Onboarding",
-        sterlex: "Live in minutes",
+        sterlex: "Self-serve in minutes",
         other: "Weeks of implementation",
     },
     {
@@ -831,17 +834,18 @@ function FinalCta() {
             <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
                 <Reveal>
                     <h2 className="font-serif text-3xl font-medium text-white sm:text-4xl md:text-5xl">
-                        Try Sterlex free for 7 days
+                        Try Sterlex free
                     </h2>
                     <p className="mt-4 text-white/80">
-                        Full access from minute one. Cancel anytime.
+                        Start on the Free plan. Upgrade to Personal ($20/mo) or
+                        Enterprise ($40/seat) when you need more tokens.
                     </p>
                     <div className="mt-9">
                         <Link
                             href="/signup"
                             className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-gray-900 shadow-lg transition-all duration-200 hover:scale-[1.04] hover:shadow-xl active:scale-[0.98]"
                         >
-                            Start free trial
+                            Start free
                             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                         </Link>
                     </div>
@@ -956,6 +960,14 @@ function Footer() {
                 <p className="mx-auto mt-2 max-w-xs text-sm text-gray-500">
                     Enterprise legal AI. Without the enterprise price.
                 </p>
+                <div className="mt-6 flex justify-center gap-6 text-sm">
+                    <Link href="/pricing" className="hover:text-white">
+                        Pricing
+                    </Link>
+                    <Link href="/login" className="hover:text-white">
+                        Log in
+                    </Link>
+                </div>
             </div>
         </footer>
     );

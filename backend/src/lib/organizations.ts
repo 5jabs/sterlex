@@ -18,6 +18,7 @@ import {
 } from "./organizationRoles";
 import { slugifyOrganizationName, uniqueOrganizationSlug } from "./organizationSlug";
 import { recordOrganizationActivity } from "./organizationActivity";
+import { ensureOrgWallet } from "./billing/wallet";
 
 type Db = ReturnType<typeof createServerSupabase>;
 
@@ -174,6 +175,7 @@ export async function createOrganization(
     if (memberError) throw memberError;
 
     await setActiveOrganization(db, args.userId, organization.id);
+    await ensureOrgWallet(db, organization.id);
     await recordOrganizationActivity(db, {
         organizationId: organization.id,
         actorUserId: args.userId,

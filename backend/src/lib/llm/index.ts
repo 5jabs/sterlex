@@ -8,10 +8,7 @@ import type {
     UserApiKeys,
 } from "./types";
 import type { LlmMetering } from "../llmUsage";
-import {
-    persistLlmMetering,
-    assertOrganizationBudgetAllowed,
-} from "../llmUsage";
+import { persistMeteredUsage, assertBillingAllowed } from "../billing/meter";
 
 export * from "./types";
 export * from "./models";
@@ -30,9 +27,10 @@ export type MeteredCompleteTextParams = {
 };
 
 async function assertMeteringBudget(metering?: LlmMetering | null) {
-    if (!metering?.organizationId) return;
-    await assertOrganizationBudgetAllowed(
+    if (!metering?.userId) return;
+    await assertBillingAllowed(
         metering.db,
+        metering.userId,
         metering.organizationId,
     );
 }
@@ -49,7 +47,7 @@ export async function streamChatWithTools(
               ? await streamOpenAI(params)
               : await streamGemini(params);
     try {
-        await persistLlmMetering(
+        await persistMeteredUsage(
             params.metering,
             provider,
             params.model,
@@ -73,7 +71,7 @@ export async function completeText(
               ? await completeOpenAIText(params)
               : await completeGeminiText(params);
     try {
-        await persistLlmMetering(
+        await persistMeteredUsage(
             params.metering,
             provider,
             params.model,

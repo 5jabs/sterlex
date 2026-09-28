@@ -241,6 +241,8 @@ export interface UserProfile {
     tabularModel: string;
     mfaOnLogin: boolean;
     legalResearchUs: boolean;
+    onboardingCompleted?: boolean;
+    wallet?: WalletSummary;
     apiKeyStatus: ApiKeyStatus;
 }
 
@@ -268,6 +270,7 @@ export async function updateUserProfile(payload: {
     titleModel?: string;
     tabularModel?: string;
     legalResearchUs?: boolean;
+    onboardingCompleted?: boolean;
 }): Promise<UserProfile> {
     return apiRequest<UserProfile>("/user/profile", {
         method: "PATCH",
@@ -532,7 +535,7 @@ export async function getProjectAccess(
 
 export async function addProjectMember(
     projectId: string,
-    payload: { user_id?: string; email?: string },
+    payload: { user_id?: string; email?: string; role?: string },
 ): Promise<ProjectMember> {
     return apiRequest<ProjectMember>(`/projects/${projectId}/members`, {
         method: "POST",
@@ -1739,3 +1742,128 @@ export async function acceptPendingOrganizationInvite(
         method: "POST",
     });
 }
+
+export type BillingPlan = "free" | "personal" | "enterprise";
+
+export interface WalletSummary {
+    id: string;
+    ownerType: "user" | "organization";
+    plan: BillingPlan;
+    seats: number;
+    includedTokensGrant: number;
+    includedTokensRemaining: number;
+    includedResetAt: string;
+    prepaidTokens: number;
+    availableTokens: number;
+    autoRechargeEnabled: boolean;
+    autoRechargePacks: number;
+    subscriptionStatus: string | null;
+    pastDue: boolean;
+    canPurchaseTokens: boolean;
+    stripeConfigured: boolean;
+}
+
+export interface TokenLedgerEntry {
+    id: string;
+    reason: string;
+    billed_tokens: number;
+    included_delta: number;
+    prepaid_delta: number;
+    llm_input_tokens: number;
+    llm_output_tokens: number;
+    model: string | null;
+    created_at: string;
+}
+
+export interface BillingCatalog {
+    currency: string;
+    personalPriceUsd: number;
+    enterpriseSeatPriceUsd: number;
+    tokenPackPriceUsd: number;
+    tokenPackTokens: number;
+    includedTokens: Record<BillingPlan, number>;
+    stripeConfigured: boolean;
+}
+
+export async function getBillingCatalog(): Promise<BillingCatalog> {
+    return apiRequest("/billing/catalog");
+}
+
+export async function getBillingSummary(
+    organizationId?: string | null,
+): Promise<{ wallet: WalletSummary; ledger: TokenLedgerEntry[] }> {
+    const query = organizationId
+        ? `?organizationId=${encodeURIComponent(organizationId)}`
+        : "";
+    return apiRequest(`/billing/summary${query}`);
+}
+
+export async function startSubscriptionCheckout(payload: {
+    plan: "personal" | "enterprise";
+    organizationId?: string;
+    seats?: number;
+}): Promise<{ url: string }> {
+    return apiRequest("/billing/checkout/subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function startPackCheckout(payload: {
+    packs?: number;
+    organizationId?: string | null;
+}): Promise<{ url: string }> {
+    return apiRequest("/billing/checkout/pack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function startBillingPortal(
+    organizationId?: string | null,
+): Promise<{ url: string }> {
+    return apiRequest("/billing/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: organizationId ?? null }),
+    });
+}
+
+export async function updateAutoRecharge(payload: {
+    enabled: boolean;
+    packs?: number;
+    organizationId?: string | null;
+}): Promise<{ wallet: WalletSummary }> {
+    return apiRequest("/billing/auto-recharge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateEnterpriseSeats(payload: {
+    organizationId: string;
+    seats: number;
+}): Promise<{ ok: boolean; seats: number }> {
+    return apiRequest("/billing/seats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function submitSupport(payload: {
+    type: string;
+    subject: string;
+    message: string;
+    link?: string;
+}): Promise<void> {
+    await apiRequest("/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+}
+

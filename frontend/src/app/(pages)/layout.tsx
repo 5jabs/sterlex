@@ -8,6 +8,7 @@ import { ChatHistoryProvider } from "@/app/contexts/ChatHistoryContext";
 import { SidebarContext } from "@/app/contexts/SidebarContext";
 import { PageChromeContext } from "@/app/contexts/PageChromeContext";
 import { AppSidebar } from "@/app/components/shared/AppSidebar";
+import { BillingBanner } from "@/app/components/billing/BillingBanner";
 import { WorkspaceGate } from "@/app/components/organizations/WorkspaceGate";
 import { WorkspaceIdentity } from "@/app/components/organizations/WorkspaceIdentity";
 
@@ -111,6 +112,7 @@ export default function SterlexLayout({
                     }}
                 >
                     <div className="flex h-dvh max-w-[100vw] flex-col overflow-hidden bg-gray-50/80">
+                        <BillingBanner />
                         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
                             <AppSidebar
                                 isOpen={isSidebarOpen}

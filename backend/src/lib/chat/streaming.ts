@@ -579,6 +579,17 @@ export async function runLLMStream(params: {
       flushPartialTurn();
       events.push({ type: "error", message: err.message });
       throw new AssistantStreamError(err.message, fullText, events);
+    } else if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err.code === "insufficient_tokens" || err.code === "payment_past_due")
+    ) {
+      flushPartialTurn();
+      const message =
+        err instanceof Error ? err.message : "Billing limit reached.";
+      events.push({ type: "error", message });
+      throw new AssistantStreamError(message, fullText, events);
     } else {
       flushPartialTurn();
       const message = safeErrorMessage(err, "Stream error");

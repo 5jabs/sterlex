@@ -36,9 +36,9 @@ import {
     OrganizationBudgetExceededError,
     meteringFromSettings,
     orgBudgetErrorPayload,
-    tryOrgBudgetGuard,
     type LlmMetering,
 } from "../lib/llmUsage";
+import { tryBillingGuard } from "../lib/billing/meter";
 import {
     checkProjectAccess,
     ensureReviewAccess,
@@ -224,7 +224,7 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
     try {
         const db = createServerSupabase();
         const settings = await getUserModelSettings(userId, db);
-        if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
             return;
         }
         const raw = await completeText({
@@ -706,7 +706,7 @@ tabularRouter.post(
                 ...missingKey,
             });
         }
-        if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+        if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
             return;
         }
         const metering = meteringFromSettings({
@@ -853,7 +853,7 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
             ...missingKey,
         });
     }
-    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+    if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
         return;
     }
     const metering = meteringFromSettings({
@@ -1288,7 +1288,7 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             ...missingKey,
         });
     }
-    if (!(await tryOrgBudgetGuard(db, settings.organizationId, res))) {
+    if (!(await tryBillingGuard(db, userId, settings.organizationId, res))) {
         return;
     }
     const metering = meteringFromSettings({

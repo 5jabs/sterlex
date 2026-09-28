@@ -13,6 +13,13 @@ import { userRouter } from "./routes/user";
 import { downloadsRouter } from "./routes/downloads";
 import { caseLawRouter } from "./routes/caseLaw";
 import { organizationsRouter } from "./routes/organizations";
+import { billingRouter } from "./routes/billing";
+import { supportRouter } from "./routes/support";
+import { createServerSupabase } from "./lib/supabase";
+import {
+  constructStripeEvent,
+  handleStripeEvent,
+} from "./lib/billing/webhooks";
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -142,6 +149,26 @@ app.delete("/user/chats", dataDeleteLimiter);
 app.delete("/user/projects", dataDeleteLimiter);
 app.delete("/user/tabular-reviews", dataDeleteLimiter);
 
+app.post(
+  "/billing/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const signature = req.header("stripe-signature");
+    if (!signature) {
+      res.status(400).json({ detail: "Missing Stripe signature" });
+      return;
+    }
+    try {
+      const event = constructStripeEvent(req.body as Buffer, signature);
+      await handleStripeEvent(createServerSupabase(), event);
+      res.json({ received: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      res.status(400).json({ detail: message });
+    }
+  },
+);
+
 app.use((req, res, next) =>
   express.json({ limit: jsonLimitForPath(req.path) })(req, res, next),
 );
@@ -155,6 +182,8 @@ app.use("/workflows", workflowsRouter);
 app.use("/user", userRouter);
 app.use("/users", userRouter);
 app.use("/organizations", organizationsRouter);
+app.use("/billing", billingRouter);
+app.use("/support", supportRouter);
 app.use("/download", downloadsRouter);
 app.use("/case-law", caseLawRouter);
 
