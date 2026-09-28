@@ -31,6 +31,8 @@ interface UserProfile {
     tabularModel: string;
     mfaOnLogin: boolean;
     legalResearchUs: boolean;
+    onboardingCompleted: boolean;
+    wallet?: ApiUserProfile["wallet"];
     apiKeys: ApiKeyState;
 }
 
@@ -90,6 +92,7 @@ function toProfile(data: ApiUserProfile): UserProfile {
     return {
         ...profile,
         mfaOnLogin: profile.mfaOnLogin === true,
+        onboardingCompleted: profile.onboardingCompleted === true,
         apiKeys,
     };
 }
@@ -121,6 +124,8 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                 tabularModel: "gemini-3-flash-preview",
                 mfaOnLogin: false,
                 legalResearchUs: true,
+                onboardingCompleted: false,
+                wallet: undefined,
                 apiKeys: emptyApiKeys(),
             });
         } finally {

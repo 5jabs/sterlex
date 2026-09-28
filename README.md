@@ -64,6 +64,14 @@ OPENAI_API_KEY=your-openai-key
 RESEND_API_KEY=your-resend-key
 USER_API_KEYS_ENCRYPTION_SECRET=your-long-random-secret
 
+# Stripe self-service billing (USD)
+STRIPE_SECRET_KEY=sk_test_replace_me
+STRIPE_WEBHOOK_SECRET=whsec_replace_me
+STRIPE_PRICE_PERSONAL=
+STRIPE_PRICE_ENTERPRISE_SEAT=
+STRIPE_PRICE_TOKEN_PACK=
+
+
 # Optional: enables CourtListener case law and citation tools.
 COURTLISTENER_API_TOKEN=your-courtlistener-token
 

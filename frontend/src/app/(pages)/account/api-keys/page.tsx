@@ -60,9 +60,10 @@ export default function ApiKeysPage() {
                 API Keys
             </h2>
             <p className="text-sm text-gray-500 mb-4">
-                You must provide your own API keys for the app to work or add
-                your API keys into the .env file if you are running your own
-                instance of Sterlex. All API keys are encrypted in storage.
+                Sterlex runs models with platform keys. You buy tokens on your
+                plan — you do not need to paste your own LLM API keys for the
+                product to work. Optional keys below override the platform
+                default for your account only.
             </p>
             <AccountSection>
                 {MODEL_API_KEY_FIELDS.map((field, index) => (

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Send, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { submitSupport } from "@/app/lib/sterlexApi";
 
 type FeedbackType = "bug" | "feature" | "question" | "other";
 
@@ -57,21 +58,12 @@ export default function SupportPage() {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch("/api/support", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    type: feedbackType,
-                    subject,
-                    message,
-                    email: user?.email,
-                    link,
-                }),
+            await submitSupport({
+                type: feedbackType,
+                subject,
+                message,
+                link,
             });
-
-            if (!response.ok) {
-                throw new Error("Failed to submit feedback");
-            }
 
             setIsSubmitted(true);
         } catch (err) {

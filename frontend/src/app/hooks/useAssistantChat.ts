@@ -376,7 +376,9 @@ export function useAssistantChat({
             detail?: unknown;
           };
           if (
-            parsed.code === "org_budget_exceeded" &&
+            (parsed.code === "org_budget_exceeded" ||
+              parsed.code === "insufficient_tokens" ||
+              parsed.code === "payment_past_due") &&
             typeof parsed.detail === "string" &&
             parsed.detail.trim()
           ) {

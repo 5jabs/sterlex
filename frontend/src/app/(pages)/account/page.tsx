@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -318,9 +319,23 @@ export default function AccountPage() {
                 </h2>
                 <AccountSection className="p-4">
                     <div>
-                        <p className="text-base font-medium text-gray-500 capitalize">
-                            {profile?.tier || "Free"}
+                        <p className="text-base font-medium capitalize text-gray-900">
+                            {profile?.wallet?.plan || profile?.tier || "free"}
                         </p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {(
+                                profile?.wallet?.availableTokens ??
+                                profile?.creditsRemaining ??
+                                0
+                            ).toLocaleString()}{" "}
+                            tokens left this period.
+                        </p>
+                        <Link
+                            href="/account/billing"
+                            className="mt-3 inline-block text-sm text-gray-700 underline"
+                        >
+                            Manage plan and tokens
+                        </Link>
                     </div>
                 </AccountSection>
             </section>
